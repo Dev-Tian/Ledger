@@ -101,12 +101,12 @@ function HeaderClock() {
   return (
     <time
       dateTime={now?.toISOString()}
-      className="flex items-center gap-2 pr-2"
+      className="flex items-center gap-2 rounded-lg bg-blue-800 px-3 py-1 text-white"
     >
-      <Clock className="size-4 text-blue-800" aria-hidden />
+      <Clock className="size-4 text-white" aria-hidden />
       <span className="flex flex-col items-end leading-tight">
         <span className="text-sm font-medium tabular-nums">{time}</span>
-        <span className="text-xs text-muted-foreground">{date}</span>
+        <span className="text-xs text-white">{date}</span>
       </span>
     </time>
   )
