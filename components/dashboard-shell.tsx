@@ -173,7 +173,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <Button
               asChild
               size="sm"
-              className="bg-blue-800 px-3 text-white hover:bg-blue-900"
+              className="bg-red-800 px-3 text-white hover:bg-red-900"
             >
               <Link href="/">Logout</Link>
             </Button>
