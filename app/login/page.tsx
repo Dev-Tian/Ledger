@@ -34,22 +34,29 @@ export default function LoginPage() {
         </div>
       </header>
       <main className="flex flex-1 items-center justify-center bg-background px-6 py-16">
-        <Card className="w-full max-w-sm shadow-md ring-blue-200">
-          <CardHeader className="items-center justify-items-center gap-3 border-b border-blue-700 bg-blue-600 px-6 py-6 text-center text-white">
-            <Image
-              src="/smctt.png"
-              alt=""
-              width={1024}
-              height={569}
-              className="h-16 w-auto"
-              style={{ width: "auto", height: "4rem" }}
-            />
-            <CardTitle className="text-lg text-white">Sign in</CardTitle>
-            <CardDescription className="text-blue-100">
-              Use your SMCT account email to open the ledger.
-            </CardDescription>
+        <Card className="w-full max-w-sm gap-0 overflow-hidden rounded-2xl bg-white py-0 shadow-xl shadow-blue-950/10 ring-1 ring-blue-100">
+          <div className="h-1.5 bg-gradient-to-r from-blue-800 via-blue-600 to-sky-400" />
+          <CardHeader className="items-center justify-items-center gap-4 px-8 pt-8 pb-0 text-center">
+            <div className="flex size-16 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
+              <Image
+                src="/smctt.png"
+                alt=""
+                width={1024}
+                height={569}
+                className="h-10 w-auto"
+                style={{ width: "auto", height: "2.5rem" }}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <CardTitle className="text-2xl font-semibold tracking-tight">
+                Sign in
+              </CardTitle>
+              <CardDescription className="text-sm leading-6">
+                Use your SMCT account email to open the ledger.
+              </CardDescription>
+            </div>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4 px-6 py-6">
+          <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
             <LoginForm />
             <Button asChild variant="ghost" className="w-full">
               <Link href="/">Back to home</Link>

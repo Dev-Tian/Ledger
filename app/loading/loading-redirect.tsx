@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -14,8 +15,57 @@ import { Progress } from "@/components/ui/progress"
 import { noInternetSrc } from "./no-internet-src"
 
 const duration = 1500
+export const skipOpeningKey = "ledger-skip-opening"
 
-export function LoadingRedirect({ signingOut }: { signingOut: boolean }) {
+export function LoadingScreen({
+  signingOut = false,
+  opening = false,
+  hold = false,
+  onComplete,
+}: {
+  signingOut?: boolean
+  opening?: boolean
+  hold?: boolean
+  onComplete?: () => void
+}) {
+  return (
+    <div className="bg-logo-tile flex min-h-svh flex-col">
+      <main className="flex flex-1 items-center justify-center px-6 py-16">
+        <div className="flex w-full max-w-sm flex-col items-center gap-5 rounded-xl bg-background px-6 py-10 text-center shadow-md ring-1 ring-blue-200">
+          <Image
+            src="/smctt.png"
+            alt="SMCT Group of Companies"
+            width={1024}
+            height={569}
+            priority
+            className="h-16 w-auto"
+            style={{ width: "auto", height: "4rem" }}
+          />
+          <p className="text-sm font-semibold tracking-tight">SMCT-LEDGER</p>
+          {hold ? (
+            <p className="text-sm leading-6 text-muted-foreground">Please wait.</p>
+          ) : (
+            <LoadingRedirect
+              signingOut={signingOut}
+              opening={opening}
+              onComplete={onComplete}
+            />
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export function LoadingRedirect({
+  signingOut = false,
+  opening = false,
+  onComplete,
+}: {
+  signingOut?: boolean
+  opening?: boolean
+  onComplete?: () => void
+}) {
   const router = useRouter()
   const [value, setValue] = useState(0)
   const [failed, setFailed] = useState(false)
@@ -52,6 +102,13 @@ export function LoadingRedirect({ signingOut }: { signingOut: boolean }) {
       if (next >= 100 && !redirected) {
         redirected = true
         window.clearInterval(timer)
+        if (onComplete) {
+          onComplete()
+          return
+        }
+        if (signingOut) {
+          window.sessionStorage.setItem(skipOpeningKey, "1")
+        }
         router.push(signingOut ? "/" : "/dashboard")
       }
     }, 40)
@@ -63,7 +120,7 @@ export function LoadingRedirect({ signingOut }: { signingOut: boolean }) {
       window.clearInterval(timer)
       window.removeEventListener("offline", fail)
     }
-  }, [attempt, router, signingOut])
+  }, [attempt, onComplete, opening, router, signingOut])
 
   function tryAgain() {
     setAttempt((current) => current + 1)
@@ -74,7 +131,15 @@ export function LoadingRedirect({ signingOut }: { signingOut: boolean }) {
       <div className="flex w-full flex-col gap-2">
         <Progress
           value={value}
-          aria-label={failed ? "Network error" : signingOut ? "Signing out" : "Preparing your ledger"}
+          aria-label={
+            failed
+              ? "Network error"
+              : signingOut
+                ? "Signing out"
+                : opening
+                  ? "Opening the ledger"
+                  : "Preparing your ledger"
+          }
           className={failed ? "h-2 bg-red-100" : "h-2 bg-blue-100"}
         />
         <p
@@ -89,12 +154,18 @@ export function LoadingRedirect({ signingOut }: { signingOut: boolean }) {
       </div>
       <div className="flex flex-col gap-2">
         <h1 className="text-xl font-semibold tracking-tight">
-          {signingOut ? "Signing out" : "Preparing your ledger"}
+          {signingOut
+            ? "Signing out"
+            : opening
+              ? "Opening the ledger"
+              : "Preparing your ledger"}
         </h1>
         <p className="text-sm leading-6 text-muted-foreground">
           {signingOut
             ? "Please wait while your session is closed."
-            : "Please wait while your account is opened."}
+            : opening
+              ? "Please wait while the ledger opens."
+              : "Please wait while your account is opened."}
         </p>
       </div>
       <AlertDialog

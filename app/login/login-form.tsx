@@ -65,9 +65,11 @@ export function LoginForm() {
   }
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
+    <form className="flex flex-col gap-5" onSubmit={onSubmit} noValidate>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="text-xs font-medium tracking-wide text-blue-950">
+          Email
+        </Label>
         <Input
           id="email"
           name="email"
@@ -75,19 +77,21 @@ export function LoginForm() {
           autoComplete="email"
           placeholder="you@example.com"
           aria-invalid={error ? true : undefined}
-          className="h-10 bg-background"
+          className="h-11 rounded-xl border-blue-100 bg-blue-50/70 px-3 shadow-none focus-visible:border-blue-700 focus-visible:ring-blue-200"
           required
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password" className="text-xs font-medium tracking-wide text-blue-950">
+          Password
+        </Label>
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="current-password"
           aria-invalid={error ? true : undefined}
-          className="h-10 bg-background"
+          className="h-11 rounded-xl border-blue-100 bg-blue-50/70 px-3 shadow-none focus-visible:border-blue-700 focus-visible:ring-blue-200"
           required
         />
       </div>
@@ -118,7 +122,7 @@ export function LoginForm() {
       <Button
         type="submit"
         size="lg"
-        className="mt-1 w-full cursor-pointer bg-blue-800 text-white hover:bg-blue-900"
+        className="mt-1 h-11 w-full cursor-pointer rounded-xl bg-blue-800 text-white shadow-sm hover:bg-blue-900"
         disabled={loadingOpen}
       >
         {loadingOpen ? "Checking account" : "Sign in"}
