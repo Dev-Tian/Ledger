@@ -1,62 +1,40 @@
-import axios, { type AxiosRequestConfig } from "axios"
+import axios from "axios";
 
-const tokenKey = "ledger-token"
-
-const client = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "",
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  withCredentials: true,
+  withXSRFToken: true,
   headers: {
+    "Content-Type": undefined,
+    "X-Requested-With": "XMLHttpRequest",
     Accept: "application/json",
   },
-})
+});
 
-client.interceptors.request.use((config) => {
-  if (typeof window === "undefined") return config
-  const token = window.localStorage.getItem(tokenKey)
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
-
-export type SignedInUser = {
-  id: number
-  name: string
-  email: string
-}
-
-export type SignInResponse = {
-  token: string
-  user: SignedInUser
-}
-
-export function signIn(email: string, password: string) {
-  return apiRequest<SignInResponse>("/api/login", {
-    method: "POST",
-    data: { email, password },
-  }).then((result) => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(tokenKey, result.token)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === "ECONNABORTED") {
+      console.error("Request timed out");
     }
-    return result
-  })
-}
 
-export class ApiError extends Error {
-  status: number
+    if (error.response?.status === 401 && !error.config?.url?.includes("/profile")) {
+      console.warn("Unauthorized request - authentication may be expired");
+    }
 
-  constructor(message: string, status: number) {
-    super(message)
-    this.name = "ApiError"
-    this.status = status
+    return Promise.reject(error);
   }
-}
+);
 
-export async function apiRequest<T>(path: string, options: AxiosRequestConfig = {}) {
-  try {
-    const response = await client.request<T>({ url: path, ...options })
-    return response.data
-  } catch (error) {
-    if (!axios.isAxiosError(error)) throw error
-    const problem = error.response?.data as { message?: string } | undefined
-    const message = problem?.message || error.message || "Request failed"
-    throw new ApiError(message, error.response?.status ?? 0)
-  }
-}
+const sanctum = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_SANCTUM_API_URL,
+  withCredentials: true,
+  withXSRFToken: true,
+  headers: {
+    "Content-Type": undefined,
+    "X-Requested-With": "XMLHttpRequest",
+    Accept: "application/json",
+  },
+});
+
+export { api, sanctum };

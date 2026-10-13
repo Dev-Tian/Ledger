@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toaster";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, signIn } from "@/lib/api";
+import { useUser } from "@/contexts/UserContext";
 
 export function LoginForm() {
   const router = useRouter();
   const toast = useToast();
+  const { login } = useUser();
   const [error, setError] = useState<string | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
   const [loadingOpen, setLoadingOpen] = useState(false);
@@ -40,28 +41,27 @@ export function LoginForm() {
 
     setLoadingOpen(true);
 
-    try {
-      await signIn(email, password);
-      if (checkId.current !== id) return;
-      setLoadingOpen(false);
-      setSuccessOpen(true);
-      toast.success({
-        title: "Signed in",
-        description: "Your account was accepted. The ledger is being prepared.",
-      });
-    } catch (caught) {
-      if (checkId.current !== id) return;
-      setLoadingOpen(false);
-      const message =
-        caught instanceof ApiError
-          ? caught.message
-          : "The account service could not be reached.";
+    const result = await login(email, password);
+    if (checkId.current !== id) return;
+    setLoadingOpen(false);
+
+    if (result.error) {
+      const message = result.isServerUnreachable
+        ? "The account service could not be reached."
+        : result.error;
       setError(message);
       toast.failed({
         title: "Unable to sign in",
         description: message,
       });
+      return;
     }
+
+    setSuccessOpen(true);
+    toast.success({
+      title: "Signed in",
+      description: "Your account was accepted. The ledger is being prepared.",
+    });
   }
 
   return (

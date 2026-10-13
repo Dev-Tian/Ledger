@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 
 import { WelcomeModal } from "@/components/status-modals"
+import { useUser } from "@/contexts/UserContext"
 
 import {
   Sidebar,
@@ -121,6 +122,11 @@ function roleFromPath(pathname: string): DashboardRole {
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const role = roleFromPath(pathname)
+  const { user, logout } = useUser()
+  const signedInLabel =
+    user?.name ||
+    [user?.fname, user?.lname].filter(Boolean).join(" ") ||
+    roleLabel[role]
   const items = navigation[role]
   const ledgerItems = ledgerNav(role)
   const [welcomeOpen, setWelcomeOpen] = useState(true)
@@ -156,12 +162,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <HeaderClock />
             <div
               className="flex items-center gap-2 pr-1"
-              aria-label={`Signed in as ${roleLabel[role]}`}
+              aria-label={`Signed in as ${signedInLabel}`}
             >
               <span className="flex size-7 items-center justify-center rounded-full bg-blue-800 text-white">
                 <User className="size-3.5" aria-hidden />
               </span>
-              <span className="text-sm font-medium">{roleLabel[role]}</span>
+              <span className="text-sm font-medium">{signedInLabel}</span>
             </div>
             <Button
               type="button"
@@ -172,11 +178,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <Settings />
             </Button>
             <Button
-              asChild
+              type="button"
               size="sm"
               className="bg-red-800 px-3 text-white hover:bg-red-900"
+              onClick={() => void logout()}
             >
-              <Link href="/loading?to=home">Logout</Link>
+              Logout
             </Button>
           </div>
         </header>
@@ -272,7 +279,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
             <p className="text-xs text-blue-100">
               Signed in as{" "}
-              <span className="font-medium text-white">{roleLabel[role]}</span>
+              <span className="font-medium text-white">{signedInLabel}</span>
             </p>
           </div>
         </footer>

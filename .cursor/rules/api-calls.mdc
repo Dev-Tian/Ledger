@@ -1,0 +1,30 @@
+---
+description: Put Ledger API calls in lib/api.ts and lib/apiService.ts
+alwaysApply: true
+---
+
+# API calls
+
+Follow the Smct-Eval split. Do not add fetch wrappers, a bearer-token store, or a third API file.
+
+`lib/api.ts` only creates the Axios clients and exports them:
+
+- `api` uses `NEXT_PUBLIC_API_URL` (`http://localhost:8000/api`)
+- `sanctum` uses `NEXT_PUBLIC_SANCTUM_API_URL` (`http://localhost:8000`)
+- Both use `withCredentials`, `withXSRFToken`, `Accept: application/json`, and `X-Requested-With: XMLHttpRequest`
+
+`lib/apiService.ts` holds every endpoint on the `apiService` object. Paths are relative to the API base, so login is `api.post("/login", …)`, which hits `/api/login`. Return `response.data`.
+
+Authenticated posts start with the Sanctum cookie:
+
+```ts
+login: async (email: string, password: string) => {
+  await sanctum_csrf();
+  const response = await api.post("/login", { email, password });
+  return response.data;
+},
+```
+
+Add the next endpoint the same way, next to `login`. Session calls already on `apiService` are `authUser` (`GET /profile`) and `logout` (`POST /logout`).
+
+Sign-in goes through `useUser().login` in `contexts/UserContext.tsx`. That calls `apiService.login`, then `apiService.authUser`, and stores the profile. Other screens read `useUser().user`. Show failures with `toApiErrorMessage`.
