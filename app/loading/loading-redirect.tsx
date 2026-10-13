@@ -1,7 +1,6 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { useEffect, useState } from "react"
 
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { noInternetSrc } from "./no-internet-src"
 
 const duration = 1500
 
@@ -106,13 +106,12 @@ export function LoadingRedirect({ signingOut }: { signingOut: boolean }) {
         <AlertDialogContent className="gap-0 overflow-hidden p-0 shadow-lg ring-red-200 sm:max-w-sm">
           <div className="flex flex-col items-center gap-3 bg-red-700 px-6 py-7 text-center text-white">
             <div className="flex size-20 items-center justify-center rounded-full bg-white shadow-sm">
-              <Image
-                src="/no-internet.png"
+              <img
+                src={noInternetSrc}
                 alt=""
-                width={512}
-                height={512}
+                width={128}
+                height={128}
                 className="size-14"
-                style={{ width: "3.5rem", height: "3.5rem" }}
               />
             </div>
             <div className="flex flex-col gap-1">

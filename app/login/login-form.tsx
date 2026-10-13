@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toaster";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ApiError, signIn } from "@/lib/api";
 
 export function LoginForm() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export function LoginForm() {
   const [loadingOpen, setLoadingOpen] = useState(false);
   const checkId = useRef(0);
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const email = String(data.get("email") ?? "").trim();
@@ -26,28 +27,41 @@ export function LoginForm() {
 
     setError(null);
     setSuccessOpen(false);
+
+    if (!email || !password) {
+      const message = "Enter your email and password.";
+      setError(message);
+      toast.failed({
+        title: "Unable to sign in",
+        description: message,
+      });
+      return;
+    }
+
     setLoadingOpen(true);
 
-    window.setTimeout(() => {
+    try {
+      await signIn(email, password);
       if (checkId.current !== id) return;
       setLoadingOpen(false);
-
-      if (!email || !password) {
-        const message = "Enter your email and password.";
-        setError(message);
-        toast.failed({
-          title: "Unable to sign in",
-          description: message,
-        });
-        return;
-      }
-
       setSuccessOpen(true);
       toast.success({
         title: "Signed in",
         description: "Your account was accepted. The ledger is being prepared.",
       });
-    }, 1200);
+    } catch (caught) {
+      if (checkId.current !== id) return;
+      setLoadingOpen(false);
+      const message =
+        caught instanceof ApiError
+          ? caught.message
+          : "The account service could not be reached.";
+      setError(message);
+      toast.failed({
+        title: "Unable to sign in",
+        description: message,
+      });
+    }
   }
 
   return (
