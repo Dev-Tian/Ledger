@@ -132,8 +132,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         onOpenChangeAction={setWelcomeOpen}
         role={roleLabel[role]}
       />
-      <SidebarProvider className="min-h-svh flex-col bg-blue-50">
-        <header className="sticky top-0 z-20 flex h-16 w-full items-center gap-3 border-b bg-white px-4">
+      <SidebarProvider className="min-h-svh bg-blue-50">
+        <div className="flex min-h-svh w-full flex-col">
+        <header className="sticky top-0 z-20 flex h-16 w-full shrink-0 items-center gap-3 border-b bg-white px-4">
           <SidebarTrigger />
           <div className="flex items-center gap-3">
             <Image
@@ -175,12 +176,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               size="sm"
               className="bg-red-800 px-3 text-white hover:bg-red-900"
             >
-              <Link href="/">Logout</Link>
+              <Link href="/loading?to=home">Logout</Link>
             </Button>
           </div>
         </header>
-        <div className="flex w-full flex-1">
-        <Sidebar className="top-16! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-blue-600 [&_[data-sidebar=sidebar]]:text-white">
+        <div className="relative flex w-full flex-1">
+        <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-blue-600 [&_[data-sidebar=sidebar]]:text-white">
           <SidebarContent className="gap-4 px-2 py-4">
             <SidebarGroup className="p-0">
               <SidebarGroupLabel className="px-2 text-xs font-medium tracking-wide text-blue-100">
@@ -247,21 +248,34 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="relative px-6 py-8">{children}</div>
           </div>
-          <footer className="border-t border-blue-700 bg-blue-600 text-white">
-            <div className="flex items-center gap-2 px-4 py-2">
+        </SidebarInset>
+        </div>
+        <footer className="relative z-20 w-full border-t border-blue-700 bg-blue-600 text-white">
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 px-6 py-3">
+            <div className="flex min-w-0 items-center gap-3">
               <Image
                 src="/smctt.png"
-                alt=""
+                alt="SMCT Group of Companies"
                 width={1024}
                 height={569}
-                className="h-6 w-auto"
-                style={{ width: "auto", height: "1.5rem" }}
+                className="h-9 w-auto"
+                style={{ width: "auto", height: "2.25rem" }}
               />
-              <p className="text-xs font-medium tracking-tight">SMCT-LEDGER</p>
-              <p className="text-xs text-blue-100">{roleLabel[role]}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold tracking-tight">
+                  SMCT-LEDGER
+                </p>
+                <p className="text-xs text-blue-100">
+                  Installment accounts, schedules, and collections.
+                </p>
+              </div>
             </div>
-          </footer>
-        </SidebarInset>
+            <p className="text-xs text-blue-100">
+              Signed in as{" "}
+              <span className="font-medium text-white">{roleLabel[role]}</span>
+            </p>
+          </div>
+        </footer>
         </div>
       </SidebarProvider>
     </TooltipProvider>

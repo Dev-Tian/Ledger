@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarClock, ClipboardList, Wallet } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LoginForm } from "@/app/login/login-form";
+import { InfoModalTrigger } from "@/components/info-modal";
+import { SiteFooter } from "@/components/site-footer";
 
 const features = [
   {
@@ -38,7 +39,7 @@ export default function Home() {
   return (
     <div className="bg-logo-tile flex min-h-svh flex-col">
       <header className="border-b border-blue-700 bg-blue-600 text-white">
-        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-6">
+        <div className="flex h-16 w-full items-center justify-between px-6">
           <Link href="/" className="inline-flex shrink-0 items-center gap-3">
             <Image
               src="/smctt.png"
@@ -53,13 +54,7 @@ export default function Home() {
               SMCT-LEDGER
             </span>
           </Link>
-          <Button
-            asChild
-            size="sm"
-            className="bg-blue-800 px-3 text-white hover:bg-blue-900"
-          >
-            <Link href="/about">About</Link>
-          </Button>
+         
         </div>
       </header>
 
@@ -78,9 +73,13 @@ export default function Home() {
               scattered spreadsheets.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="bg-blue-800 text-white hover:bg-blue-900">
-                <Link href="/about">About</Link>
-              </Button>
+              <InfoModalTrigger
+                topic="about"
+                size="lg"
+                className="bg-blue-800 text-white hover:bg-blue-900"
+              >
+                About
+              </InfoModalTrigger>
               
             </div>
           </div>
@@ -138,33 +137,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-blue-700 bg-blue-600 text-white">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-5">
-          <div className="flex min-w-0 items-center gap-3">
-            <Image
-              src="/smctt.png"
-              alt="SMCT Group of Companies"
-              width={1024}
-              height={569}
-              className="h-14 w-auto"
-              style={{ width: "auto", height: "3.5rem" }}
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold tracking-tight">SMCT-LEDGER</p>
-              <p className="text-sm text-blue-100">
-                Installment accounts, schedules, and collections.
-              </p>
-            </div>
-          </div>
-          <Button
-            asChild
-            size="sm"
-            className="shrink-0 bg-blue-800 px-3 text-white hover:bg-blue-900"
-          >
-            <Link href="/about">About</Link>
-          </Button>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
