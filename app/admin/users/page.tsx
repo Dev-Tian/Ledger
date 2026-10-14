@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-const columns = ["Branch code", "Name", "Email", "Branch"]
+const columns = ["Name", "Email", "Branch", "Branch code"]
 
 export default function AdminUsersPage() {
   return (

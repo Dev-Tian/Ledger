@@ -31,21 +31,15 @@ const monthlyInstallment = monthlyPrincipal + monthlyInterest
 export function CustomerSetupForm() {
 
   return (
-    <div className="mx-auto max-w-4xl overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
+    <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
       <div className="bg-blue-800 px-5 py-4 text-white">
-        <h2 className="text-base font-semibold tracking-tight">Customer loan setup</h2>
+        <h2 className="text-2xl font-semibold tracking-tight uppercase">{customerName}</h2>
         <p className="mt-1 text-sm text-blue-100">
           One customer. These fields are read only.
         </p>
       </div>
       <div className="flex max-h-[min(32rem,calc(100svh-18rem))] flex-col gap-6 overflow-y-auto px-5 py-5">
         <Section title="Customer">
-          <TextField
-            label="Customer name"
-            id="customer-name"
-            value={customerName}
-            className="sm:col-span-2"
-          />
           <TextField
             label="Customer ID"
             id="customer-id"

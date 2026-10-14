@@ -34,13 +34,6 @@ const loanLedgerColumns = [
   "Payment breakdown",
 ]
 
-const loanLedgerDetailColumns = loanLedgerColumns.filter(
-  (column) => column !== "Payment breakdown",
-)
-
-const paymentDetailNote =
-  "Each due date appears once per actual payment reference. If a due date has no payment, one scheduled row appears."
-
 const paymentHistoryColumns = [
   "Payment date",
   "OR / Ref no.",
@@ -59,7 +52,6 @@ const tabs = [
   "Customer set-up",
   "Branch info",
   "Loan Ledger",
-  "Loan Ledger detail",
   "Payment history",
 ] as const
 
@@ -220,13 +212,6 @@ export function AccountLedgerView() {
             notes=""
             columns={loanLedgerColumns}
             empty="No installments are listed yet."
-          />
-        ) : tab === "Loan Ledger detail" ? (
-          <LedgerPanel
-            title="Per customer loan ledger — payment detail"
-            notes={paymentDetailNote}
-            columns={loanLedgerDetailColumns}
-            empty="No payment details are listed yet."
           />
         ) : tab === "Payment history" ? (
           <RecordTable columns={paymentHistoryColumns} empty="No payments are listed yet." />

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CalendarClock, Receipt, type LucideIcon } from "lucide-react"
+import { BookOpen, Building2, CalendarClock, Receipt, Users, type LucideIcon } from "lucide-react"
 
 import { ExcelUploadModal } from "@/components/excel-upload-modal"
 import {
@@ -11,16 +11,23 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
+const statuses: { label: string; value: number; icon: LucideIcon }[] = [
+  { label: "Total Accounts", value: 1, icon: BookOpen },
+  { label: "Total users", value: 0, icon: Users },
+  { label: "Total branches", value: 2, icon: Building2 },
+]
+
 const areas: { title: string; description: string; icon: LucideIcon }[] = [
-  {
-    title: "Payment",
-    description: "Upload payment records for collections posted against installment accounts.",
-    icon: Receipt,
-  },
+ 
   {
     title: "Installment",
     description: "Upload installment records that set or update an account schedule.",
     icon: CalendarClock,
+  },
+  {
+    title: "Payment",
+    description: "Upload payment records for collections posted against installment accounts.",
+    icon: Receipt,
   },
 ]
 
@@ -29,14 +36,22 @@ export default function AdminDashboardPage() {
 
   return (
     <section className="flex flex-col gap-8">
-      <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-8 py-8 text-white shadow-md">
-        <p className="text-xs font-medium tracking-[0.16em] text-blue-100 uppercase">
-          Admin
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight">Overview</h1>
-        <p className="mt-3 max-w-xl text-sm leading-7 text-blue-50">
-          Upload payment records and installment records.
-        </p>
+      <div className="grid gap-4 md:grid-cols-3">
+        {statuses.map((status) => (
+          <Card key={status.label} className="rounded-3xl bg-white shadow-md ring-blue-100">
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
+              <div>
+                <CardDescription className="text-sm font-medium text-blue-800">
+                  {status.label}
+                </CardDescription>
+                <CardTitle className="mt-2 text-3xl tabular-nums">{status.value}</CardTitle>
+              </div>
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-800 to-sky-500 text-white">
+                <status.icon className="size-5" />
+              </div>
+            </CardHeader>
+          </Card>
+        ))}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {areas.map((area) => (

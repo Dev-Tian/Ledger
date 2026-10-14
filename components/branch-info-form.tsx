@@ -21,9 +21,9 @@ const monthlyInterest = "2563"
 export function BranchInfoForm() {
 
   return (
-    <div className="mx-auto max-w-4xl overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
+    <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
       <div className="bg-blue-800 px-5 py-4 text-white">
-        <h2 className="text-base font-semibold tracking-tight">Branch loan template</h2>
+        <h2 className="text-2xl font-semibold tracking-tight uppercase">{customerName}</h2>
         <p className="mt-1 text-sm text-blue-100">
           Branch details and the loan inputs for this account. These fields are read only.
         </p>
@@ -38,12 +38,6 @@ export function BranchInfoForm() {
           <TextField label="Template version" id="template-version" value={templateVersion} />
         </Section>
         <Section title="Loan setup">
-          <TextField
-            label="Customer name"
-            id="branch-customer-name"
-            value={customerName}
-            className="sm:col-span-2"
-          />
           <TextField
             label="Customer ID"
             id="branch-customer-id"
