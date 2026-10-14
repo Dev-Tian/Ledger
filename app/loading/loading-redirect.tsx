@@ -113,12 +113,12 @@ export function LoadingRedirect({
           window.sessionStorage.setItem(skipOpeningKey, "1")
         }
         const destinations: Record<string, string> = {
-          admin: "/dashboard/admin",
-          uploader: "/dashboard",
-          employee: "/dashboard",
-          viewer: "/dashboard/viewer",
+          admin: "/admin",
+          uploader: "/uploader",
+          employee: "/",
+          viewer: "/viewer",
         }
-        router.push(signingOut ? "/" : destinations[role] ?? "/dashboard")
+        router.push(signingOut ? "/" : destinations[role] ?? "/")
       }
     }, 40)
 

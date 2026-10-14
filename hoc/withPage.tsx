@@ -7,9 +7,10 @@ import { useUser } from "@/contexts/UserContext";
 import { accountRole, AuthGuard } from "@/hoc/withAuth";
 
 const roleDashboards: Record<string, string> = {
-  admin: "/dashboard/admin",
-  employee: "/dashboard",
-  viewer: "/dashboard/viewer",
+  admin: "/admin",
+  uploader: "/uploader",
+  employee: "/",
+  viewer: "/viewer",
 };
 
 interface WithPageOptions {
@@ -53,7 +54,7 @@ export function withPublicPage<P extends object>(
     useEffect(() => {
       if (!options.redirectIfAuthenticated || isLoading || !isAuthenticated || !user) return;
       const role = accountRole(user);
-      router.replace((role && roleDashboards[role]) || "/dashboard");
+      router.replace((role && roleDashboards[role]) || "/");
     }, [isAuthenticated, isLoading, router, user]);
 
     return <Component {...props} />;

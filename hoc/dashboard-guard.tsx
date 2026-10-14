@@ -7,11 +7,13 @@ import { AuthGuard } from "@/hoc/withAuth";
 
 export function DashboardGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const requiredRole = pathname.startsWith("/dashboard/admin")
+  const requiredRole = pathname.startsWith("/admin")
     ? "admin"
-    : pathname.startsWith("/dashboard/viewer")
-      ? "viewer"
-      : "employee";
+    : pathname.startsWith("/uploader")
+      ? "uploader"
+      : pathname.startsWith("/viewer")
+        ? "viewer"
+        : "employee";
 
   return <AuthGuard requiredRole={requiredRole}>{children}</AuthGuard>;
 }

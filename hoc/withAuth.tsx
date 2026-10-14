@@ -7,10 +7,10 @@ import { ErrorModal } from "@/components/status-modals";
 import { useUser, type User } from "@/contexts/UserContext";
 
 const roleDashboards: Record<string, string> = {
-  admin: "/dashboard/admin",
-  uploader: "/dashboard",
-  employee: "/dashboard",
-  viewer: "/dashboard/viewer",
+  admin: "/admin",
+  uploader: "/uploader",
+  employee: "/",
+  viewer: "/viewer",
 };
 
 interface WithAuthOptions {

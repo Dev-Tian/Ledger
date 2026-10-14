@@ -35,17 +35,17 @@ import {
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
-export type DashboardRole = "admin" | "employee" | "viewer"
+export type DashboardRole = "admin" | "uploader" | "employee" | "viewer"
 
 type NavItem = { href: string; label: string; icon: LucideIcon }
 
 function navItems(role: DashboardRole): NavItem[] {
   const base =
     role === "admin"
-      ? "/dashboard/admin"
+      ? "/admin"
       : role === "viewer"
-        ? "/dashboard/viewer"
-        : "/dashboard"
+        ? "/viewer"
+        : "/uploader"
 
   const ledger: NavItem[] = [
     { href: `${base}/customer-setup`, label: "Customer setup", icon: UserRound },
@@ -64,7 +64,9 @@ function navItems(role: DashboardRole): NavItem[] {
     ]
   }
 
-  if (role === "employee") return ledger
+  if (role === "uploader" || role === "employee") {
+    return [{ href: base, label: "Overview", icon: LayoutDashboard }, ...ledger]
+  }
 
   return [
     { href: base, label: "Overview", icon: LayoutDashboard },
@@ -84,6 +86,7 @@ function navItems(role: DashboardRole): NavItem[] {
 
 const roleLabel: Record<DashboardRole, string> = {
   admin: "Admin",
+  uploader: "Uploader",
   employee: "Employee",
   viewer: "Viewer",
 }
@@ -132,8 +135,9 @@ function HeaderClock() {
 }
 
 function roleFromPath(pathname: string): DashboardRole {
-  if (pathname.startsWith("/dashboard/admin")) return "admin"
-  if (pathname.startsWith("/dashboard/viewer")) return "viewer"
+  if (pathname.startsWith("/admin")) return "admin"
+  if (pathname.startsWith("/uploader")) return "uploader"
+  if (pathname.startsWith("/viewer")) return "viewer"
   return "employee"
 }
 
