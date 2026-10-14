@@ -12,6 +12,7 @@ Follow the Smct-Eval split. Do not add fetch wrappers, a bearer-token store, or 
 - `api` uses `NEXT_PUBLIC_API_URL` (`http://localhost:8000/api`)
 - `sanctum` uses `NEXT_PUBLIC_SANCTUM_API_URL` (`http://localhost:8000`)
 - Both use `withCredentials`, `withXSRFToken`, `Accept: application/json`, and `X-Requested-With: XMLHttpRequest`
+- A failed request with no response calls `emitConnectionLost()` from `lib/connectionEvents.ts`
 
 `lib/apiService.ts` holds every endpoint on the `apiService` object. Paths are relative to the API base, so login is `api.post("/login", …)`, which hits `/api/login`. Return `response.data`.
 

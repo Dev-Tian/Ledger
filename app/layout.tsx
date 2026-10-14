@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { ToastProvider } from "@/components/ui/toaster";
+import { ConnectionProvider } from "@/contexts/ConnectionContext";
 import { UserProvider } from "@/contexts/UserContext";
 import "./globals.css";
 
@@ -28,7 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <UserProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ConnectionProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </ConnectionProvider>
         </UserProvider>
       </body>
     </html>

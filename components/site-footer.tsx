@@ -4,11 +4,11 @@ import Link from "next/link"
 import { InfoModalTrigger } from "@/components/info-modal"
 
 const linkClass =
-  "text-sm text-blue-100 underline-offset-4 hover:text-white hover:underline"
+  "rounded-full bg-white/10 px-3.5 py-1.5 text-sm text-white ring-1 ring-white/15 transition hover:bg-white/20"
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-blue-700 bg-blue-600 text-white">
+    <footer className="border-t border-white/10 bg-gradient-to-r from-blue-800 via-blue-700 to-sky-600 text-white">
       <div className="flex w-full flex-wrap items-center justify-between gap-4 px-6 py-5">
         <div className="flex min-w-0 items-center gap-3">
           <Image
@@ -16,17 +16,20 @@ export function SiteFooter() {
             alt="SMCT Group of Companies"
             width={1024}
             height={569}
-            className="h-14 w-auto"
-            style={{ width: "auto", height: "3.5rem" }}
+            className="h-12 w-auto shrink-0"
+            style={{ width: "auto", height: "3rem" }}
           />
           <div className="min-w-0">
+            <p className="text-[0.65rem] font-medium tracking-[0.16em] text-blue-100 uppercase">
+              SMCT Group
+            </p>
             <p className="text-sm font-semibold tracking-tight">SMCT-LEDGER</p>
             <p className="text-sm text-blue-100">
               Installment accounts, schedules, and collections.
             </p>
           </div>
         </div>
-        <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <nav aria-label="Footer" className="flex flex-wrap items-center gap-2">
           <InfoModalTrigger
             appearance="link"
             topic="help"
