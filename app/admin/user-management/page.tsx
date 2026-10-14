@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export const instant = false
 
 const columns = ["Name", "Email", "Role"]
 

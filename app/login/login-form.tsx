@@ -118,7 +118,7 @@ export function LoginForm() {
       />
       <ErrorModal
         open={error !== null}
-        onOpenChange={(open) => {
+        onOpenChangeAction={(open) => {
           if (!open) setError(null);
         }}
         title="Unable to sign in"
@@ -126,7 +126,7 @@ export function LoginForm() {
       />
       <SuccessModal
         open={successOpen}
-        onOpenChange={(open) => {
+        onOpenChangeAction={(open) => {
           setSuccessOpen(open);
           if (!open) router.push("/loading");
         }}

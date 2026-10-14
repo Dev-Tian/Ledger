@@ -18,6 +18,10 @@ export interface User {
   fname?: string;
   lname?: string;
   email?: string;
+  contact?: string;
+  position?: string;
+  department?: string;
+  branch_code?: string;
   role?: string;
   roles?: { name?: string }[];
 }

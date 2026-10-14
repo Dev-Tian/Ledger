@@ -1,6 +1,9 @@
-import Link from "next/link"
-import { BookOpen, History, UserCog, UserRound, Users } from "lucide-react"
+"use client"
 
+import { useState } from "react"
+import { CalendarClock, Receipt, type LucideIcon } from "lucide-react"
+
+import { ExcelUploadModal } from "@/components/excel-upload-modal"
 import {
   Card,
   CardDescription,
@@ -8,42 +11,22 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export const instant = false
-
-const areas = [
+const areas: { title: string; description: string; icon: LucideIcon }[] = [
   {
-    href: "/admin/customer-setup",
-    title: "Customer setup",
-    description: "Enter one customer and the loan that starts the installment plan.",
-    icon: UserRound,
+    title: "Payment",
+    description: "Upload payment records for collections posted against installment accounts.",
+    icon: Receipt,
   },
   {
-    href: "/admin/loan-ledger",
-    title: "Loan ledger",
-    description: "Review balances, terms, and the schedule for each account.",
-    icon: BookOpen,
-  },
-  {
-    href: "/admin/payment-history",
-    title: "Payment history",
-    description: "See the collections posted against each installment.",
-    icon: History,
-  },
-  {
-    href: "/admin/accounts",
-    title: "Accounts",
-    description: "Look across the installment accounts the branch is carrying.",
-    icon: Users,
-  },
-  {
-    href: "/admin/user-management",
-    title: "User management",
-    description: "Add and review the people who can sign in to the ledger.",
-    icon: UserCog,
+    title: "Installment",
+    description: "Upload installment records that set or update an account schedule.",
+    icon: CalendarClock,
   },
 ]
 
 export default function AdminDashboardPage() {
+  const [uploadTitle, setUploadTitle] = useState<string | null>(null)
+
   return (
     <section className="flex flex-col gap-8">
       <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-8 py-8 text-white shadow-md">
@@ -52,13 +35,17 @@ export default function AdminDashboardPage() {
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Overview</h1>
         <p className="mt-3 max-w-xl text-sm leading-7 text-blue-50">
-          Customer setup, the loan ledger, payment history, accounts, and user
-          management.
+          Upload payment records and installment records.
         </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
         {areas.map((area) => (
-          <Link key={area.href} href={area.href} className="group">
+          <button
+            key={area.title}
+            type="button"
+            className="group text-left"
+            onClick={() => setUploadTitle(area.title)}
+          >
             <Card className="h-full rounded-3xl bg-white shadow-md ring-blue-100 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:ring-blue-400">
               <CardHeader className="flex flex-col gap-4">
                 <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-800 to-sky-500 text-white">
@@ -70,9 +57,16 @@ export default function AdminDashboardPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-          </Link>
+          </button>
         ))}
       </div>
+      <ExcelUploadModal
+        open={uploadTitle !== null}
+        onOpenChangeAction={(open) => {
+          if (!open) setUploadTitle(null)
+        }}
+        title={uploadTitle ?? "Payment"}
+      />
     </section>
   )
 }

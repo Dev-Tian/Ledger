@@ -1,6 +1,6 @@
 import { LedgerPage } from "@/components/ledger-page"
 
-export const instant = false
+
 
 export default function AdminPaymentHistoryPage() {
   return (

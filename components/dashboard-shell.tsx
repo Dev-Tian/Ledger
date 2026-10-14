@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { ProfileSettingsModal } from "@/components/profile-settings-modal"
 import { WelcomeModal } from "@/components/status-modals"
 import { useUser } from "@/contexts/UserContext"
 
@@ -151,6 +152,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     roleLabel[role]
   const items = navItems(role)
   const [welcomeOpen, setWelcomeOpen] = useState(true)
+  const [profileOpen, setProfileOpen] = useState(false)
 
   return (
     <TooltipProvider>
@@ -158,6 +160,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         open={welcomeOpen}
         onOpenChangeAction={setWelcomeOpen}
         role={roleLabel[role]}
+      />
+      <ProfileSettingsModal
+        open={profileOpen}
+        onOpenChangeAction={setProfileOpen}
+        user={user}
+        role={user?.role || user?.roles?.[0]?.name || roleLabel[role]}
       />
       <SidebarProvider className="min-h-svh bg-blue-50">
         <div className="flex min-h-svh w-full flex-col">
@@ -193,15 +201,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <Button
               type="button"
               size="icon-sm"
-              aria-label="Settings"
-              className="bg-blue-800 text-white hover:bg-blue-900"
+              aria-label="Profile settings"
+              className="bg-blue-800 text-white hover:bg-blue-900 cursor-pointer"
+              onClick={() => setProfileOpen(true)}
             >
               <Settings />
             </Button>
             <Button
               type="button"
               size="sm"
-              className="bg-red-800 px-3 text-white hover:bg-red-900"
+              className="bg-red-500 px-3 text-white hover:bg-red-700 cursor-pointer"
               onClick={() => void logout()}
             >
               Logout

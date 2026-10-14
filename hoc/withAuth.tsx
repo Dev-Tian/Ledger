@@ -61,20 +61,25 @@ export function AuthGuard({
 
   if (!allowed) {
     return (
-      <div className="bg-logo-tile flex min-h-svh items-center justify-center px-6">
-        <p className="text-sm font-medium text-blue-950">
-          {blocked ? "Entry refused." : "Checking your account."}
-        </p>
-        <ErrorModal
-          open={noticeOpen}
-          onOpenChange={(open) => {
-            setNoticeOpen(open);
-            if (!open) leave();
-          }}
-          title="Entry refused"
-          description="You are not allowed to do such entry."
-        />
-      </div>
+      <>
+        <div hidden inert>
+          {children}
+        </div>
+        <div className="bg-logo-tile flex min-h-svh items-center justify-center px-6">
+          <p className="text-sm font-medium text-blue-950">
+            {blocked ? "Entry refused." : "Checking your account."}
+          </p>
+          <ErrorModal
+            open={noticeOpen}
+            onOpenChangeAction={(open) => {
+              setNoticeOpen(open);
+              if (!open) leave();
+            }}
+            title="Entry refused"
+            description="You are not allowed to do such entry."
+          />
+        </div>
+      </>
     );
   }
 

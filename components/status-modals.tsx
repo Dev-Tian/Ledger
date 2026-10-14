@@ -13,21 +13,21 @@ import {
 
 type StatusModalProps = {
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChangeAction: (open: boolean) => void
   title: string
   description: string
 }
 
 function StatusModal({
   open,
-  onOpenChange,
+  onOpenChangeAction,
   title,
   description,
   tone,
 }: StatusModalProps & { tone: "success" | "error" }) {
   const success = tone === "success"
-  const onOpenChangeRef = useRef(onOpenChange)
-  onOpenChangeRef.current = onOpenChange
+  const onOpenChangeRef = useRef(onOpenChangeAction)
+  onOpenChangeRef.current = onOpenChangeAction
 
   useEffect(() => {
     if (!open) return
@@ -36,7 +36,7 @@ function StatusModal({
   }, [open])
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={onOpenChangeAction}>
       <AlertDialogContent
         size="sm"
         className={
