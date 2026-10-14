@@ -40,61 +40,6 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const temporarySessionKey = "ledger-temp-user";
-
-// Seeded accounts stand in until login and profile return the signed-in user.
-const seededAccounts: Record<string, User> = {
-  admin: {
-    id: "temp-admin",
-    name: "Admin Test User",
-    email: "admin@example.com",
-    role: "admin",
-    roles: [{ name: "admin" }],
-  },
-  uploader: {
-    id: "temp-uploader",
-    name: "Uploader Test User",
-    email: "uploader@example.com",
-    role: "uploader",
-    roles: [{ name: "uploader" }],
-  },
-  employee: {
-    id: "temp-employee",
-    name: "Employee Test User",
-    email: "employee@example.com",
-    role: "employee",
-    roles: [{ name: "employee" }],
-  },
-};
-
-seededAccounts["admin@example.com"] = seededAccounts.admin;
-seededAccounts["uploader@example.com"] = seededAccounts.uploader;
-seededAccounts["employee@example.com"] = seededAccounts.employee;
-
-function temporarySeedUser(identifier: string): User | null {
-  return seededAccounts[identifier.trim().toLowerCase()] ?? null;
-}
-
-function readTemporaryUser(): User | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.sessionStorage.getItem(temporarySessionKey);
-  if (!raw) return null;
-  try {
-    return profileUser(JSON.parse(raw));
-  } catch {
-    return null;
-  }
-}
-
-function storeTemporaryUser(user: User | null) {
-  if (typeof window === "undefined") return;
-  if (!user) {
-    window.sessionStorage.removeItem(temporarySessionKey);
-    return;
-  }
-  window.sessionStorage.setItem(temporarySessionKey, JSON.stringify(user));
-}
-
 function profileUser(payload: unknown): User | null {
   if (!payload || typeof payload !== "object") return null;
   const record = payload as { data?: User; user?: User; role?: string };
@@ -156,7 +101,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       });
     } catch (error) {
       if (isUnauthorized(error)) {
-        setUser(readTemporaryUser());
+        setUser(null);
         return;
       }
       console.error("Error refreshing user:", error);
@@ -169,13 +114,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     async function loadUserAuth() {
       try {
         const userData = profileUser(await apiService.authUser());
-        if (!isMounted) return;
-        storeTemporaryUser(null);
-        setUser(userData);
+        if (isMounted) setUser(userData);
       } catch (error) {
         if (!isMounted) return;
         if (isUnauthorized(error)) {
-          setUser(readTemporaryUser());
+          setUser(null);
         } else {
           console.error("Error during session restoration:", error);
         }
@@ -194,22 +137,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       const res = await apiService.login(email, password);
       let userData = profileUser(res);
-      let fromProfile = false;
       try {
-        const profile = profileUser(await apiService.authUser());
-        if (profile) {
-          userData = profile;
-          fromProfile = true;
-        }
+        userData = profileUser(await apiService.authUser()) ?? userData;
       } catch (profileError) {
-        if (!userData) userData = temporarySeedUser(email);
         if (!userData) return loginFailure(profileError);
       }
-      if (!userData) userData = temporarySeedUser(email);
       if (!userData) {
         return { error: "The profile could not be read." };
       }
-      storeTemporaryUser(fromProfile ? null : userData);
       setUser(userData);
 
       return {
@@ -228,7 +163,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
-      storeTemporaryUser(null);
       setUser(null);
       router.push("/loading?to=home");
     }
