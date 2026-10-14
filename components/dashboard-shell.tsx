@@ -6,11 +6,13 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
   BookOpen,
+  CalendarClock,
   Clock,
   History,
   LayoutDashboard,
   Settings,
   User,
+  UserCog,
   UserRound,
   Users,
   type LucideIcon,
@@ -23,7 +25,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
@@ -38,18 +39,7 @@ export type DashboardRole = "admin" | "employee" | "viewer"
 
 type NavItem = { href: string; label: string; icon: LucideIcon }
 
-const navigation: Record<DashboardRole, NavItem[]> = {
-  employee: [],
-  admin: [
-    { href: "/dashboard/admin", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/admin/accounts", label: "Accounts", icon: Users },
-  ],
-  viewer: [
-    { href: "/dashboard/viewer", label: "Overview", icon: LayoutDashboard },
-  ],
-}
-
-function ledgerNav(role: DashboardRole): NavItem[] {
+function navItems(role: DashboardRole): NavItem[] {
   const base =
     role === "admin"
       ? "/dashboard/admin"
@@ -57,10 +47,38 @@ function ledgerNav(role: DashboardRole): NavItem[] {
         ? "/dashboard/viewer"
         : "/dashboard"
 
-  return [
+  const ledger: NavItem[] = [
     { href: `${base}/customer-setup`, label: "Customer setup", icon: UserRound },
     { href: `${base}/loan-ledger`, label: "Loan ledger", icon: BookOpen },
     { href: `${base}/payment-history`, label: "Payment history", icon: History },
+  ]
+
+  if (role === "viewer") {
+    return [
+      ...ledger,
+      {
+        href: `${base}/manual-aging`,
+        label: "Manual aging",
+        icon: CalendarClock,
+      },
+    ]
+  }
+
+  if (role === "employee") return ledger
+
+  return [
+    { href: base, label: "Overview", icon: LayoutDashboard },
+    ...ledger,
+    {
+      href: `${base}/accounts`,
+      label: "Accounts",
+      icon: Users,
+    },
+    {
+      href: `${base}/user-management`,
+      label: "User management",
+      icon: UserCog,
+    },
   ]
 }
 
@@ -127,8 +145,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     user?.name ||
     [user?.fname, user?.lname].filter(Boolean).join(" ") ||
     roleLabel[role]
-  const items = navigation[role]
-  const ledgerItems = ledgerNav(role)
+  const items = navItems(role)
   const [welcomeOpen, setWelcomeOpen] = useState(true)
 
   return (
@@ -189,13 +206,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </header>
         <div className="relative flex w-full flex-1">
         <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-blue-600 [&_[data-sidebar=sidebar]]:text-white">
-          <SidebarContent className="gap-4 px-2 py-4">
+          <SidebarContent className="px-2 py-4">
             <SidebarGroup className="p-0">
-              <SidebarGroupLabel className="px-2 text-xs font-medium tracking-wide text-blue-100">
-                Ledger
-              </SidebarGroupLabel>
               <SidebarMenu className="gap-1">
-                {ledgerItems.map((item) => (
+                {items.map((item) => (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
@@ -212,30 +226,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 ))}
               </SidebarMenu>
             </SidebarGroup>
-            {items.length > 0 ? (
-              <SidebarGroup className="p-0">
-                <SidebarGroupLabel className="px-2 text-xs font-medium tracking-wide text-blue-100">
-                  {roleLabel[role]}
-                </SidebarGroupLabel>
-                <SidebarMenu className="gap-1">
-                  {items.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={pathname === item.href}
-                        tooltip={item.label}
-                        className="h-10 rounded-lg px-3 text-white hover:bg-blue-700 hover:text-white data-active:bg-white data-active:font-semibold data-active:text-blue-800"
-                      >
-                        <Link href={item.href}>
-                          <item.icon />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroup>
-            ) : null}
           </SidebarContent>
         </Sidebar>
         <SidebarInset className="bg-blue-50">

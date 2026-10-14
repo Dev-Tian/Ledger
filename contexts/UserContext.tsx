@@ -42,9 +42,12 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 function profileUser(payload: unknown): User | null {
   if (!payload || typeof payload !== "object") return null;
-  const record = payload as { data?: User; user?: User };
-  const user = record.data ?? record.user ?? (payload as User);
+  const record = payload as { data?: User; user?: User; role?: string };
+  const user = record.user ?? record.data ?? (payload as User);
   if (!user || typeof user !== "object") return null;
+  if (!user.email && !user.name && user.id == null) return null;
+  if (!user.role && user.roles?.[0]?.name) user.role = user.roles[0].name;
+  if (!user.role && record.role) user.role = record.role;
   return user;
 }
 
@@ -133,14 +136,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<LoginResult> => {
     try {
       const res = await apiService.login(email, password);
-      let userData: User | null = null;
+      let userData = profileUser(res);
       try {
-        userData = profileUser(await apiService.authUser());
-        setUser(userData);
+        userData = profileUser(await apiService.authUser()) ?? userData;
       } catch (profileError) {
-        console.error("Login succeeded but profile refresh failed:", profileError);
-        await refreshUser({ force: true });
+        if (!userData) return loginFailure(profileError);
       }
+      if (!userData) {
+        return { error: "The profile could not be read." };
+      }
+      setUser(userData);
 
       return {
         ...(res && typeof res === "object" ? res : { data: res }),

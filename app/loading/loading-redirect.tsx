@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { useUser } from "@/contexts/UserContext"
 import { noInternetSrc } from "./no-internet-src"
 
 const duration = 1500
@@ -67,6 +68,8 @@ export function LoadingRedirect({
   onComplete?: () => void
 }) {
   const router = useRouter()
+  const { user } = useUser()
+  const role = (user?.role || user?.roles?.[0]?.name || "employee").toLowerCase()
   const [value, setValue] = useState(0)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
@@ -109,7 +112,13 @@ export function LoadingRedirect({
         if (signingOut) {
           window.sessionStorage.setItem(skipOpeningKey, "1")
         }
-        router.push(signingOut ? "/" : "/dashboard")
+        const destinations: Record<string, string> = {
+          admin: "/dashboard/admin",
+          uploader: "/dashboard",
+          employee: "/dashboard",
+          viewer: "/dashboard/viewer",
+        }
+        router.push(signingOut ? "/" : destinations[role] ?? "/dashboard")
       }
     }, 40)
 
@@ -120,7 +129,7 @@ export function LoadingRedirect({
       window.clearInterval(timer)
       window.removeEventListener("offline", fail)
     }
-  }, [attempt, onComplete, opening, router, signingOut])
+  }, [attempt, onComplete, opening, role, router, signingOut])
 
   function tryAgain() {
     setAttempt((current) => current + 1)
