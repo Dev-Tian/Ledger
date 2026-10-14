@@ -6,13 +6,15 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
   BookOpen,
+  Building2,
   CalendarClock,
+  ClipboardList,
   Clock,
   History,
   LayoutDashboard,
+  ScrollText,
   Settings,
   User,
-  UserCog,
   UserRound,
   Users,
   type LucideIcon,
@@ -71,17 +73,11 @@ function navItems(role: DashboardRole): NavItem[] {
 
   return [
     { href: base, label: "Overview", icon: LayoutDashboard },
-    ...ledger,
-    {
-      href: `${base}/accounts`,
-      label: "Accounts",
-      icon: Users,
-    },
-    {
-      href: `${base}/user-management`,
-      label: "User management",
-      icon: UserCog,
-    },
+    { href: `${base}/accounts`, label: "Accounts", icon: BookOpen },
+    { href: `${base}/users`, label: "Users", icon: Users },
+    { href: `${base}/branches`, label: "Branches", icon: Building2 },
+    { href: `${base}/reports`, label: "Reports", icon: ClipboardList },
+    { href: `${base}/activity-logs`, label: "Activity logs", icon: ScrollText },
   ]
 }
 
@@ -151,6 +147,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     [user?.fname, user?.lname].filter(Boolean).join(" ") ||
     roleLabel[role]
   const items = navItems(role)
+  const showSidebar = !pathname.startsWith("/admin/account-ledger")
   const [welcomeOpen, setWelcomeOpen] = useState(true)
   const [profileOpen, setProfileOpen] = useState(false)
 
@@ -170,7 +167,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <SidebarProvider className="min-h-svh bg-blue-50">
         <div className="flex min-h-svh w-full flex-col">
         <header className="sticky top-0 z-20 flex h-16 w-full shrink-0 items-center gap-3 border-b bg-white px-4">
-          <SidebarTrigger />
+          {showSidebar ? <SidebarTrigger /> : null}
           <div className="flex items-center gap-3">
             <Image
               src="/smctt.png"
@@ -189,36 +186,40 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </p>
           <div className="ml-auto flex items-center gap-2">
             <HeaderClock />
-            <div
-              className="flex items-center gap-2 pr-1"
-              aria-label={`Signed in as ${signedInLabel}`}
-            >
-              <span className="flex size-7 items-center justify-center rounded-full bg-blue-800 text-white">
-                <User className="size-3.5" aria-hidden />
-              </span>
-              <span className="text-sm font-medium">{signedInLabel}</span>
-            </div>
-            <Button
-              type="button"
-              size="icon-sm"
-              aria-label="Profile settings"
-              className="bg-blue-800 text-white hover:bg-blue-900 cursor-pointer"
-              onClick={() => setProfileOpen(true)}
-            >
-              <Settings />
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="bg-red-500 px-3 text-white hover:bg-red-700 cursor-pointer"
-              onClick={() => void logout()}
-            >
-              Logout
-            </Button>
+            {showSidebar ? (
+              <>
+                <div
+                  className="flex items-center gap-2 pr-1"
+                  aria-label={`Signed in as ${signedInLabel}`}
+                >
+                  <span className="flex size-7 items-center justify-center rounded-full bg-blue-800 text-white">
+                    <User className="size-3.5" aria-hidden />
+                  </span>
+                  <span className="text-sm font-medium">{signedInLabel}</span>
+                </div>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  aria-label="Profile settings"
+                  className="bg-blue-800 text-white hover:bg-blue-900 cursor-pointer"
+                  onClick={() => setProfileOpen(true)}
+                >
+                  <Settings />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-red-500 px-3 text-white hover:bg-red-700 cursor-pointer"
+                  onClick={() => void logout()}
+                >
+                  Logout
+                </Button>
+              </>
+            ) : null}
           </div>
         </header>
         <div className="relative flex w-full flex-1">
-        <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-blue-600 [&_[data-sidebar=sidebar]]:text-white">
+        {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-blue-600 [&_[data-sidebar=sidebar]]:text-white">
           <SidebarContent className="px-2 py-4">
             <SidebarGroup className="p-0">
               <SidebarMenu className="gap-1">
@@ -240,7 +241,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
-        </Sidebar>
+        </Sidebar> : null}
         <SidebarInset className="bg-blue-50">
           <div className="relative flex-1">
             <div
