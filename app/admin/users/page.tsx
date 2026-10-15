@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Pencil, RefreshCw, Search, Trash2 } from "lucide-react"
 
 import { TableEmpty } from "@/components/table-empty"
@@ -53,11 +53,7 @@ const pageSize = 10
 
 type BranchOption = { value: string; label: string }
 
-const knownBranches: BranchOption[] = [
-  { value: "", label: "All branches" },
-  { value: "BOHL", label: "Bohol Logistics · BOHL" },
-  { value: "ALAD", label: "Alano · ALAD" },
-]
+const allBranches: BranchOption = { value: "", label: "All branches" }
 
 function pageNumbers(current: number, last: number) {
   if (last <= 7) return Array.from({ length: last }, (_, index) => index + 1)
@@ -103,6 +99,20 @@ function listedUsers(payload: unknown): ListedUser[] {
   return list.filter((item): item is ListedUser => !!item && typeof item === "object")
 }
 
+function listedBranches(payload: unknown): BranchOption[] {
+  if (!payload || typeof payload !== "object") return [allBranches]
+  const list = (payload as { branch_code?: unknown }).branch_code
+  if (!Array.isArray(list)) return [allBranches]
+  const options = list.flatMap((item) => {
+    if (!item || typeof item !== "object") return []
+    const code = (item as { branch_code?: unknown }).branch_code
+    if (typeof code !== "string" || !code.trim()) return []
+    const value = code.trim()
+    return [{ value, label: value }]
+  })
+  return [allBranches, ...options]
+}
+
 function displayName(user: ListedUser) {
   const name = user.name?.trim() || [user.fname, user.lname].filter(Boolean).join(" ")
   return name || "—"
@@ -121,33 +131,22 @@ export default function AdminUsersPage() {
   const [lastPage, setLastPage] = useState(1)
   const [users, setUsers] = useState<ListedUser[]>([])
   const [query, setQuery] = useState("")
-  const [branch, setBranch] = useState<BranchOption | null>(knownBranches[0])
+  const [search, setSearch] = useState("")
+  const [branch, setBranch] = useState<BranchOption | null>(allBranches)
+  const [branches, setBranches] = useState<BranchOption[]>([allBranches])
   const [editing, setEditing] = useState<ListedUser | null>(null)
   const [error, setError] = useState("")
-  const branches = useMemo(() => {
-    const options = [...knownBranches]
-    for (const user of users) {
-      const code = user.branch_code?.trim()
-      if (code && !options.some((option) => option.value.toLowerCase() === code.toLowerCase())) {
-        options.push({ value: code, label: code })
-      }
-    }
-    return options
-  }, [users])
-  const shown = useMemo(() => {
-    const text = query.trim().toLowerCase()
-    const branchCode = branch?.value.trim().toLowerCase() ?? ""
-    return users.filter((user) => {
-      const matchesBranch =
-        !branchCode || user.branch_code?.trim().toLowerCase() === branchCode
-      const matchesText =
-        !text ||
-        [displayName(user), user.email, user.code, user.branch_code].some((value) =>
-          value?.toLowerCase().includes(text),
-        )
-      return matchesBranch && matchesText
-    })
-  }, [branch, query, users])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = query.trim()
+      setSearch((current) => {
+        if (current !== next) setPage(1)
+        return next
+      })
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [query])
 
   useEffect(() => {
     let cancelled = false
@@ -156,10 +155,15 @@ export default function AdminUsersPage() {
       setLoading(true)
       setError("")
       try {
-        const data = await apiService.getUsers(page)
+        const data = await apiService.getUsers(page, {
+          search,
+          branch_code: branch?.value ?? "",
+        })
         if (!cancelled) {
           const next = readUserPage(data)
+          const nextBranches = listedBranches(data)
           setUsers(next.users)
+          setBranches((current) => (nextBranches.length > 1 ? nextBranches : current))
           setPage(next.currentPage)
           setLastPage(next.lastPage)
         }
@@ -177,7 +181,7 @@ export default function AdminUsersPage() {
     return () => {
       cancelled = true
     }
-  }, [page, reloadKey])
+  }, [page, reloadKey, search, branch])
 
   function refresh() {
     setLoading(true)
@@ -218,7 +222,10 @@ export default function AdminUsersPage() {
             <Combobox
               items={branches}
               value={branch}
-              onValueChange={(value) => setBranch(value)}
+              onValueChange={(value) => {
+                setBranch(value)
+                setPage(1)
+              }}
               isItemEqualToValue={(item, selected) => item.value === selected.value}
             >
               <ComboboxTrigger className="flex h-10 min-w-44 items-center justify-between gap-2 rounded-lg border border-input bg-blue-50/60 px-3 text-sm text-blue-950">
@@ -275,20 +282,20 @@ export default function AdminUsersPage() {
                   <TableEmpty label={error} />
                 </TableCell>
               </TableRow>
-            ) : shown.length === 0 ? (
+            ) : users.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={columns.length} className="px-5 py-6 text-center">
                   <TableEmpty
                     label={
-                      users.length === 0
-                        ? "No users are listed yet."
-                        : "No users match that filter."
+                      search || branch?.value
+                        ? "No users match that filter."
+                        : "No users are listed yet."
                     }
                   />
                 </TableCell>
               </TableRow>
             ) : (
-              shown.map((user) => {
+              users.map((user) => {
                 const name = displayName(user)
                 return (
                   <TableRow key={user.id ?? user.email} className="hover:bg-blue-50/70">

@@ -46,8 +46,20 @@ export const apiService = {
     return response.data;
   },
 
-  getUsers: async (page = 1): Promise<unknown> => {
-    const response = await api.get("/users", { params: { page, per_page: 10 } });
+// ADMIN USER API :
+  getUsers: async (
+    page = 1,
+    filters?: { search?: string; branch_code?: string },
+  ): Promise<unknown> => {
+    const params: { page: number; per_page: number; search?: string; branch_code?: string } = {
+      page,
+      per_page: 10,
+    };
+    const search = filters?.search?.trim();
+    const branchCode = filters?.branch_code?.trim();
+    if (search) params.search = search;
+    if (branchCode) params.branch_code = branchCode;
+    const response = await api.get("/users", { params });
     return response.data;
   },
 
