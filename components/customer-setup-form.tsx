@@ -1,3 +1,4 @@
+import { ledgerCustomers, type LedgerCustomer } from "@/components/ledger-customers"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -12,28 +13,22 @@ function toAmount(value: string) {
   return Number.isFinite(amount) ? amount : 0
 }
 
-const customerName = "Sample Customer"
-const customerId = "CUST-001"
-const salesOrderNo = "SO-0001"
-const itemUnit = "Smash 115"
-const loanStartDate = "2026-04-03"
-const loanAmount = "242268"
-const downPayment = "15000"
-const termMonths = "36"
-const rebateAmount = "300"
-const financedAmount = "135000"
-
-const monthlyPrincipal =
-  toAmount(termMonths) > 0 ? toAmount(financedAmount) / toAmount(termMonths) : 0
-const monthlyInterest = 0
-const monthlyInstallment = monthlyPrincipal + monthlyInterest
-
-export function CustomerSetupForm() {
+export function CustomerSetupForm({
+  customer = ledgerCustomers[0],
+}: {
+  customer?: LedgerCustomer
+}) {
+  const monthlyPrincipal =
+    toAmount(customer.termMonths) > 0
+      ? toAmount(customer.financedAmount) / toAmount(customer.termMonths)
+      : 0
+  const monthlyInterest = 0
+  const monthlyInstallment = monthlyPrincipal + monthlyInterest
 
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
       <div className="bg-blue-800 px-5 py-4 text-white">
-        <h2 className="text-2xl font-semibold tracking-tight uppercase">{customerName}</h2>
+        <h2 className="text-2xl font-semibold tracking-tight uppercase">{customer.customerName}</h2>
         <p className="mt-1 text-sm text-blue-100">
           One customer. These fields are read only.
         </p>
@@ -43,51 +38,51 @@ export function CustomerSetupForm() {
           <TextField
             label="Customer ID"
             id="customer-id"
-            value={customerId}
+            value={customer.customerId}
           />
         </Section>
         <Section title="Purchase">
           <TextField
             label="Sales order no."
             id="sales-order-no"
-            value={salesOrderNo}
+            value={customer.salesOrderNo}
           />
-          <TextField label="Item / unit" id="item-unit" value={itemUnit} />
+          <TextField label="Item / unit" id="item-unit" value={customer.itemUnit} />
           <Field label="Loan start date" htmlFor="loan-start-date">
             <Input
               id="loan-start-date"
               type="date"
               readOnly
-              value={loanStartDate}
+              value={customer.loanStartDate}
               className="h-9 bg-white text-blue-950"
             />
           </Field>
         </Section>
         <Section title="Amounts">
-          <MoneyField label="Loan amount" id="loan-amount" value={loanAmount} />
+          <MoneyField label="Loan amount" id="loan-amount" value={customer.loanAmount} />
           <MoneyField
             label="Down payment"
             id="down-payment"
-            value={downPayment}
+            value={customer.downPayment}
           />
           <Field label="Term (months)" htmlFor="term-months">
             <Input
               id="term-months"
               inputMode="numeric"
               readOnly
-              value={termMonths}
+              value={customer.termMonths}
               className="h-9 bg-white text-blue-950 tabular-nums"
             />
           </Field>
           <MoneyField
             label="Rebate amount"
             id="rebate-amount"
-            value={rebateAmount}
+            value={customer.rebateAmount}
           />
           <MoneyField
             label="Financed amount"
             id="financed-amount"
-            value={financedAmount}
+            value={customer.financedAmount}
           />
         </Section>
         <div className="grid gap-3 sm:grid-cols-3">

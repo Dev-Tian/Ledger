@@ -5,7 +5,7 @@ import { RefreshCw } from "lucide-react"
 
 import { TableEmpty } from "@/components/table-empty"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { LoadingState } from "@/components/loading-state"
 import {
   Table,
   TableBody,
@@ -65,15 +65,11 @@ export default function AdminUsersPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }, (_, index) => (
-                <TableRow key={index}>
-                  {columns.map((column) => (
-                    <TableCell key={column} className="px-4">
-                      <Skeleton className="h-4 w-full max-w-32" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              <TableRow>
+                <TableCell colSpan={columns.length} className="px-4">
+                  <LoadingState />
+                </TableCell>
+              </TableRow>
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="px-4 py-6 text-center">
