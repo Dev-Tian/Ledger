@@ -13,6 +13,7 @@ import {
   History,
   LayoutDashboard,
   ScrollText,
+  Search,
   Settings,
   User,
   UserRound,
@@ -23,6 +24,7 @@ import {
 import { ProfileSettingsModal } from "@/components/profile-settings-modal"
 import { WelcomeModal } from "@/components/status-modals"
 import { useUser } from "@/contexts/UserContext"
+import { accountRole } from "@/hoc/withAuth"
 
 import {
   Sidebar,
@@ -46,7 +48,7 @@ function navItems(role: DashboardRole): NavItem[] {
   const base =
     role === "admin"
       ? "/admin"
-      : role === "viewer"
+      : role === "viewer" || role === "employee"
         ? "/viewer"
         : "/uploader"
 
@@ -75,7 +77,7 @@ function navItems(role: DashboardRole): NavItem[] {
   }
 
   if (role === "employee") {
-    return [{ href: base, label: "Overview", icon: LayoutDashboard }, ...ledger]
+    return [{ href: "/viewer/customer-search", label: "Customer search", icon: Search }]
   }
 
   return [
@@ -147,8 +149,15 @@ function roleFromPath(pathname: string): DashboardRole {
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const role = roleFromPath(pathname)
   const { user, logout } = useUser()
+  const signedInRole = accountRole(user)
+  const role =
+    signedInRole === "admin" ||
+    signedInRole === "uploader" ||
+    signedInRole === "employee" ||
+    signedInRole === "viewer"
+      ? signedInRole
+      : roleFromPath(pathname)
   const signedInLabel =
     user?.name ||
     [user?.fname, user?.lname].filter(Boolean).join(" ") ||

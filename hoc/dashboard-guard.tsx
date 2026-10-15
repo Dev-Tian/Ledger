@@ -12,7 +12,7 @@ export function DashboardGuard({ children }: { children: ReactNode }) {
     : pathname.startsWith("/uploader")
       ? "uploader"
       : pathname.startsWith("/viewer")
-        ? "viewer"
+        ? ["viewer", "employee"]
         : "employee";
 
   return <AuthGuard requiredRole={requiredRole}>{children}</AuthGuard>;

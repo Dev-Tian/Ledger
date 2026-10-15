@@ -9,7 +9,7 @@ import { accountRole, AuthGuard } from "@/hoc/withAuth";
 const roleDashboards: Record<string, string> = {
   admin: "/admin",
   uploader: "/uploader",
-  employee: "/",
+  employee: "/viewer/customer-search",
   viewer: "/viewer",
 };
 

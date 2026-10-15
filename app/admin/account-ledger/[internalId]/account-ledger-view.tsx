@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { Search } from "lucide-react"
 
 import { BranchInfoForm } from "@/components/branch-info-form"
 import { CustomerSetupForm } from "@/components/customer-setup-form"
 import { TableEmpty } from "@/components/table-empty"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -171,34 +173,52 @@ function LedgerPanel({
   )
 }
 
-export function AccountLedgerView() {
+const customerSearch = ["sample customer", "cust-001", "so-0001", "smash 115", "acc-1001", "maria santos"]
+
+export function AccountLedgerView({ searchable = false }: { searchable?: boolean }) {
   const [tab, setTab] = useState<AccountLedgerTab>(tabs[0])
+  const [query, setQuery] = useState("")
+  const text = query.trim().toLowerCase()
+  const found = !searchable || text === "" || customerSearch.some((value) => value.includes(text))
 
   return (
     <section className="-mt-5.5 flex flex-col gap-6">
-     
-      <div role="tablist" aria-label="Account Ledger" className="flex flex-wrap gap-2">
-        {tabs.map((item) => {
-          const selected = tab === item
-          return (
-            <Button
-              key={item}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              size="sm"
-              className={
-                selected
-                  ? "bg-blue-800 px-3 text-white hover:bg-blue-900"
-                  : "bg-white px-3 text-blue-800 ring-1 ring-blue-200 hover:bg-blue-50"
-              }
-              onClick={() => setTab(item)}
-            >
-              {item}
-            </Button>
-          )
-        })}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div role="tablist" aria-label="Account Ledger" className="flex flex-wrap gap-2">
+          {tabs.map((item) => {
+            const selected = tab === item
+            return (
+              <Button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                size="sm"
+                className={
+                  selected
+                    ? "bg-blue-800 px-3 text-white hover:bg-blue-900"
+                    : "bg-white px-3 text-blue-800 ring-1 ring-blue-200 hover:bg-blue-50"
+                }
+                onClick={() => setTab(item)}
+              >
+                {item}
+              </Button>
+            )
+          })}
+        </div>
+        {searchable ? (
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by customer name, customer ID, or sales order"
+              className="h-8 bg-white pl-9"
+            />
+          </div>
+        ) : null}
       </div>
+      {found ? (
       <div role="tabpanel">
         {tab === "Customer set-up" ? (
           <CustomerSetupForm />
@@ -219,6 +239,11 @@ export function AccountLedgerView() {
           </div>
         )}
       </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
+          <TableEmpty label="No customer matches that search." />
+        </div>
+      )}
     </section>
   )
 }
