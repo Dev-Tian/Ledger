@@ -1,5 +1,7 @@
 import { CalendarClock } from "lucide-react"
 
+import { TableEmpty } from "@/components/table-empty"
+
 import {
   Card,
   CardDescription,
@@ -56,12 +58,8 @@ export default function ViewerManualAgingPage() {
             </thead>
             <tbody>
               <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-10 text-center text-muted-foreground"
-                >
-                  The aging schedule will appear here when the ledger service
-                  returns it.
+                <td colSpan={columns.length} className="px-4 py-6 text-center">
+                  <TableEmpty label="No accounts are listed yet." />
                 </td>
               </tr>
             </tbody>

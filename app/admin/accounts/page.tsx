@@ -1,6 +1,12 @@
-import Link from "next/link"
+"use client"
 
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { RefreshCw } from "lucide-react"
+
+import { TableEmpty } from "@/components/table-empty"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -38,13 +44,39 @@ const accounts: Account[] = [
 ]
 
 export default function AdminAccountsPage() {
+  const [loading, setLoading] = useState(true)
+  const [reloadKey, setReloadKey] = useState(0)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 600)
+    return () => window.clearTimeout(timer)
+  }, [reloadKey])
+
+  function refresh() {
+    setLoading(true)
+    setReloadKey((key) => key + 1)
+  }
+
   return (
     <section className="flex flex-col gap-6">
-      <div className="max-w-xl">   
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Accounts</h1>
-        <p className="mt-2 leading-7 text-muted-foreground">
-          Installment accounts managed by an administrator will be listed here.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-xl">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Accounts</h1>
+          <p className="mt-2 leading-7 text-muted-foreground">
+            Installment accounts managed by an administrator will be listed here.
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="mt-2 px-3"
+          disabled={loading}
+          onClick={refresh}
+        >
+          <RefreshCw />
+          Refresh
+        </Button>
       </div>
       <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
         <Table>
@@ -58,13 +90,24 @@ export default function AdminAccountsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {accounts.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }, (_, index) => (
+                <TableRow key={index}>
+                  {columns.map((column) => (
+                    <TableCell key={column} className="px-4">
+                      <Skeleton
+                        className={
+                          column === "Actions" ? "h-8 w-16" : "h-4 w-full max-w-32"
+                        }
+                      />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : accounts.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="px-4 py-10 text-center text-muted-foreground"
-                >
-                  No accounts are listed yet.
+                <TableCell colSpan={columns.length} className="px-4 py-6 text-center">
+                  <TableEmpty label="" />
                 </TableCell>
               </TableRow>
             ) : (

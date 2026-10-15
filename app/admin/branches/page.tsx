@@ -3,6 +3,8 @@
 import { Pencil, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { AddBranchModal } from "@/components/add-branch-modal"
+import { BranchCustomersModal } from "@/components/branch-customers-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -11,25 +13,44 @@ const branches = [
     code: "BOHL",
     name: "Bohol Logistics",
     company: "Strong Moto Centrum, Inc. - SMCT",
+    customers: [
+      {
+        internalId: "ACC-1001",
+        customerName: "Maria Santos",
+        purchaseDate: "Oct 14, 2026",
+        salesOrderNo: "SO-24081",
+        location: "Cebu",
+      },
+    ],
   },
   {
     code: "ALAD",
     name: "Alano",
     company: "Des Appliance Plaza, Inc. - DAP",
+    customers: [],
   },
 ]
 
 export default function AdminBranchesPage() {
+  const [items, setItems] = useState(branches)
   const [query, setQuery] = useState("")
+  const [adding, setAdding] = useState(false)
+  const [selected, setSelected] = useState<(typeof branches)[number] | null>(null)
   const shown = useMemo(() => {
     const text = query.trim().toLowerCase()
-    if (!text) return branches
-    return branches.filter((branch) =>
+    if (!text) return items
+    return items.filter((branch) =>
       [branch.name, branch.code, branch.company].some((value) =>
         value.toLowerCase().includes(text),
       ),
     )
-  }, [query])
+  }, [items, query])
+
+  function addBranch(branch: { name: string; code: string; company: string }) {
+    if (items.some((item) => item.code === branch.code)) return false
+    setItems((current) => [...current, { ...branch, customers: [] }])
+    return true
+  }
 
   return (
     <section className="flex flex-col gap-6">
@@ -41,7 +62,12 @@ export default function AdminBranchesPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" className="bg-blue-800 px-3 text-white hover:bg-blue-900">
+          <Button
+            type="button"
+            size="sm"
+            className="bg-blue-800 px-3 text-white hover:bg-blue-900"
+            onClick={() => setAdding(true)}
+          >
             <Plus />
             Add branch
           </Button>
@@ -88,15 +114,32 @@ export default function AdminBranchesPage() {
                 </Button>
               </div>
             </div>
-            <Button type="button" size="sm" className="bg-blue-800 text-white hover:bg-blue-900">
+            <Button
+              type="button"
+              size="sm"
+              className="bg-blue-800 text-white hover:bg-blue-900"
+              onClick={() => setSelected(branch)}
+            >
               <Users />
               View customers
             </Button>
           </article>
         ))}
       </div>
+      <AddBranchModal
+        open={adding}
+        onOpenChangeAction={setAdding}
+        onAddAction={addBranch}
+      />
+      <BranchCustomersModal
+        open={selected !== null}
+        onOpenChangeAction={(open) => {
+          if (!open) setSelected(null)
+        }}
+        branch={selected}
+      />
       {shown.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No branches match that search.</p>
+        <p className="text-sm text-muted-foreground"></p>
       ) : null}
     </section>
   )

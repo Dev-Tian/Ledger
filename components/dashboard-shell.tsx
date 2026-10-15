@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, type CSSProperties } from "react"
 import {
   BookOpen,
   Building2,
@@ -67,7 +67,14 @@ function navItems(role: DashboardRole): NavItem[] {
     ]
   }
 
-  if (role === "uploader" || role === "employee") {
+  if (role === "uploader") {
+    return [
+      { href: base, label: "Overview", icon: LayoutDashboard },
+      { href: `${base}/accounts`, label: "Accounts", icon: BookOpen },
+    ]
+  }
+
+  if (role === "employee") {
     return [{ href: base, label: "Overview", icon: LayoutDashboard }, ...ledger]
   }
 
@@ -147,7 +154,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     [user?.fname, user?.lname].filter(Boolean).join(" ") ||
     roleLabel[role]
   const items = navItems(role)
-  const showSidebar = !pathname.startsWith("/admin/account-ledger")
+  const showSidebar = !pathname.includes("/account-ledger")
   const [welcomeOpen, setWelcomeOpen] = useState(true)
   const [profileOpen, setProfileOpen] = useState(false)
 
@@ -164,7 +171,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         user={user}
         role={user?.role || user?.roles?.[0]?.name || roleLabel[role]}
       />
-      <SidebarProvider className="min-h-svh bg-blue-50">
+      <SidebarProvider
+        className="min-h-svh bg-blue-50"
+        style={{ "--sidebar-width": "13rem" } as CSSProperties}
+      >
         <div className="flex min-h-svh w-full flex-col">
         <header className="sticky top-0 z-20 flex h-16 w-full shrink-0 items-center gap-3 border-b bg-white px-4">
           {showSidebar ? <SidebarTrigger /> : null}
@@ -241,6 +251,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
+          <div className="pointer-events-none mt-auto flex justify-center px-4 pb-6">
+            <Image
+              src="/insurance.png"
+              alt=""
+              width={512}
+              height={512}
+              className="h-28 w-28 opacity-30"
+              style={{ width: "7rem", height: "7rem" }}
+            />
+          </div>
         </Sidebar> : null}
         <SidebarInset className="bg-blue-50">
           <div className="relative flex-1">

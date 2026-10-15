@@ -4,6 +4,7 @@ import { useState } from "react"
 
 import { BranchInfoForm } from "@/components/branch-info-form"
 import { CustomerSetupForm } from "@/components/customer-setup-form"
+import { TableEmpty } from "@/components/table-empty"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -141,11 +142,8 @@ function RecordTable({
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell
-              colSpan={columns.length}
-              className="px-4 py-10 text-center text-muted-foreground"
-            >
-              {empty}
+            <TableCell colSpan={columns.length} className="px-4 py-6 text-center">
+              <TableEmpty label={empty} />
             </TableCell>
           </TableRow>
         </TableBody>
