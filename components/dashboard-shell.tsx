@@ -181,11 +181,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         role={user?.role || user?.roles?.[0]?.name || roleLabel[role]}
       />
       <SidebarProvider
-        className="min-h-svh bg-blue-50"
+        className="h-svh overflow-hidden bg-blue-50"
         style={{ "--sidebar-width": "13rem" } as CSSProperties}
       >
-        <div className="flex min-h-svh w-full flex-col">
-        <header className="sticky top-0 z-20 flex h-16 w-full shrink-0 items-center gap-3 border-b bg-white px-4">
+        <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+        <header className="z-20 flex h-16 w-full shrink-0 items-center gap-3 border-b bg-white px-4">
           {showSidebar ? <SidebarTrigger /> : null}
           <div className="flex items-center gap-3">
             <Image
@@ -237,7 +237,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             ) : null}
           </div>
         </header>
-        <div className="relative flex w-full flex-1">
+        <div className="relative flex min-h-0 w-full flex-1 overflow-hidden">
         {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-blue-600 [&_[data-sidebar=sidebar]]:text-white">
           <SidebarContent className="px-2 py-4">
             <SidebarGroup className="p-0">
@@ -271,7 +271,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             />
           </div>
         </Sidebar> : null}
-        <SidebarInset className="min-w-0 bg-blue-50">
+        <SidebarInset className="min-h-0 min-w-0 overflow-y-auto bg-blue-50">
           <div className="relative min-w-0 flex-1">
             <div
               aria-hidden
@@ -290,7 +290,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </SidebarInset>
         </div>
-        <footer className="relative z-20 w-full border-t border-blue-700 bg-blue-600 text-white">
+        <footer className="relative z-20 w-full shrink-0 border-t border-blue-700 bg-blue-600 text-white">
           <div className="flex w-full flex-wrap items-center justify-between gap-3 px-6 py-3">
             <div className="flex min-w-0 items-center gap-3">
               <Image

@@ -5,6 +5,13 @@ import { Pencil, RefreshCw, Search, Trash2 } from "lucide-react"
 
 import { TableEmpty } from "@/components/table-empty"
 import { UpdateUserModal } from "@/components/update-user-modal"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Combobox,
@@ -135,6 +142,10 @@ export default function AdminUsersPage() {
   const [branch, setBranch] = useState<BranchOption | null>(allBranches)
   const [branches, setBranches] = useState<BranchOption[]>([allBranches])
   const [editing, setEditing] = useState<ListedUser | null>(null)
+  const [deletingUser, setDeletingUser] = useState<ListedUser | null>(null)
+  const [leavingId, setLeavingId] = useState<string | number | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -188,14 +199,24 @@ export default function AdminUsersPage() {
     setReloadKey((key) => key + 1)
   }
 
-  async function removeUser(user: ListedUser) {
-    if (user.id == null) return
-    setError("")
+  async function removeUser() {
+    if (deletingUser?.id == null) return
+    setRemoving(true)
+    setDeleteError("")
     try {
-      await apiService.deleteUser(user.id)
-      refresh()
-    } catch (deleteError) {
-      setError(toApiErrorMessage(deleteError, "That user could not be deleted."))
+      const removedId = deletingUser.id
+      await apiService.deleteUser(removedId)
+      setDeletingUser(null)
+      setLeavingId(removedId)
+      window.setTimeout(() => {
+        setUsers((current) => current.filter((user) => user.id !== removedId))
+        setLeavingId(null)
+        setReloadKey((key) => key + 1)
+      }, 700)
+    } catch (failure) {
+      setDeleteError(toApiErrorMessage(failure, "That user could not be deleted."))
+    } finally {
+      setRemoving(false)
     }
   }
 
@@ -247,7 +268,7 @@ export default function AdminUsersPage() {
               type="button"
               size="sm"
               variant="outline"
-              className="h-10 px-3"
+              className="h-10 px-3 bg-blue-800 text-white hover:bg-blue-900 cursor-pointer hover:text-white"
               disabled={loading}
               onClick={refresh}
             >
@@ -297,8 +318,16 @@ export default function AdminUsersPage() {
             ) : (
               users.map((user) => {
                 const name = displayName(user)
+                const leaving = leavingId != null && user.id === leavingId
                 return (
-                  <TableRow key={user.id ?? user.email} className="hover:bg-blue-50/70">
+                  <TableRow
+                    key={user.id ?? user.email}
+                    className={
+                      leaving
+                        ? "pointer-events-none animate-user-remove"
+                        : "hover:bg-blue-50/70"
+                    }
+                  >
                     <TableCell className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-800 text-xs font-semibold text-white">
@@ -338,7 +367,10 @@ export default function AdminUsersPage() {
                           className="bg-white"
                           aria-label={`Delete ${name}`}
                           disabled={user.id == null}
-                          onClick={() => void removeUser(user)}
+                          onClick={() => {
+                            setDeleteError("")
+                            setDeletingUser(user)
+                          }}
                         >
                           <Trash2 className="text-red-600" />
                         </Button>
@@ -402,6 +434,54 @@ export default function AdminUsersPage() {
       </Pagination>
       </div>
       </div>
+      <AlertDialog
+        open={deletingUser !== null}
+        onOpenChange={(open) => {
+          if (!open && !removing) setDeletingUser(null)
+        }}
+      >
+        <AlertDialogContent className="w-[min(28rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!">
+          <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-6 py-5 text-white">
+            <AlertDialogTitle className="text-xl font-semibold">Delete this user?</AlertDialogTitle>
+            <AlertDialogDescription className="mt-1 text-sm text-blue-100">
+              Their sign-in will be removed. This cannot be undone.
+            </AlertDialogDescription>
+          </div>
+          {deletingUser ? (
+            <div className="px-6 py-5">
+              <p className="text-lg font-semibold text-blue-950">{displayName(deletingUser)}</p>
+              <dl className="mt-4 grid gap-3 text-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-muted-foreground">Email</dt>
+                  <dd className="font-medium text-blue-950">{deletingUser.email || "—"}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-muted-foreground">Code</dt>
+                  <dd className="font-medium text-blue-950">{deletingUser.code || "—"}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-muted-foreground">Branch code</dt>
+                  <dd className="font-medium text-blue-950">{deletingUser.branch_code || "—"}</dd>
+                </div>
+              </dl>
+              {deleteError ? <p className="mt-4 text-sm text-red-600">{deleteError}</p> : null}
+            </div>
+          ) : null}
+          <div className="flex justify-end gap-2 border-t border-blue-100 bg-blue-50 px-6 py-4">
+            <AlertDialogCancel className="bg-white px-4" disabled={removing}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              className="bg-red-600 px-4 text-white hover:bg-red-700"
+              disabled={removing || deletingUser?.id == null}
+              onClick={() => void removeUser()}
+            >
+              {removing ? "Deleting" : "Delete user"}
+            </Button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
       <UpdateUserModal
         open={editing !== null}
         user={editing}
