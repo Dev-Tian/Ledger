@@ -271,8 +271,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             />
           </div>
         </Sidebar> : null}
-        <SidebarInset className="bg-blue-50">
-          <div className="relative flex-1">
+        <SidebarInset className="min-w-0 bg-blue-50">
+          <div className="relative min-w-0 flex-1">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
@@ -286,7 +286,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 style={{ width: "min(72rem, 115%)", height: "auto" }}
               />
             </div>
-            <div className="relative px-6 py-8">{children}</div>
+            <div className="relative min-w-0 px-4 py-6 sm:px-6 sm:py-8">{children}</div>
           </div>
         </SidebarInset>
         </div>

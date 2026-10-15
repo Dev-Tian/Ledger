@@ -45,6 +45,31 @@ export const apiService = {
     const response = await api.post("/logout");
     return response.data;
   },
+
+  getUsers: async (page = 1): Promise<unknown> => {
+    const response = await api.get("/users", { params: { page, per_page: 10 } });
+    return response.data;
+  },
+
+  getUser: async (user: string | number): Promise<unknown> => {
+    const response = await api.get(`/users/${user}`);
+    return response.data;
+  },
+
+  addUser: async (payload: Record<string, unknown>): Promise<unknown> => {
+    const response = await api.post("/users", payload);
+    return response.data;
+  },
+
+  updateUser: async (user: string | number, payload: Record<string, unknown>): Promise<unknown> => {
+    const response = await api.put(`/users/${user}`, payload);
+    return response.data;
+  },
+
+  deleteUser: async (user: string | number): Promise<unknown> => {
+    const response = await api.delete(`/users/${user}`);
+    return response.data;
+  },
 };
 
 export default apiService;
