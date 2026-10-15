@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react"
 
+import { BranchCodeCombobox } from "@/components/branch-code-combobox"
 import { LoadingState } from "@/components/loading-state"
 import {
   AlertDialog,
@@ -40,11 +41,13 @@ function readUser(payload: unknown): EditableUser | null {
 export function UpdateUserModal({
   open,
   user,
+  branches,
   onOpenChangeAction,
   onUpdatedAction,
 }: {
   open: boolean
   user: EditableUser | null
+  branches: string[]
   onOpenChangeAction: (open: boolean) => void
   onUpdatedAction: () => void
 }) {
@@ -162,10 +165,10 @@ export function UpdateUserModal({
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-semibold text-blue-950">Branch code</span>
-                <Input
+                <BranchCodeCombobox
+                  branches={branches}
                   value={branchCode}
-                  onChange={(event) => setBranchCode(event.target.value)}
-                  className="h-11 bg-white text-base text-blue-950"
+                  onValueChange={setBranchCode}
                 />
               </label>
               <label className="flex flex-col gap-1.5">

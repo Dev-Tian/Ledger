@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Pencil, RefreshCw, Search, Trash2 } from "lucide-react"
+import { Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react"
 
+import { AddUserModal } from "@/components/add-user-modal"
 import { TableEmpty } from "@/components/table-empty"
 import { UpdateUserModal } from "@/components/update-user-modal"
 import {
@@ -142,6 +143,7 @@ export default function AdminUsersPage() {
   const [branch, setBranch] = useState<BranchOption | null>(allBranches)
   const [branches, setBranches] = useState<BranchOption[]>([allBranches])
   const [editing, setEditing] = useState<ListedUser | null>(null)
+  const [adding, setAdding] = useState(false)
   const [deletingUser, setDeletingUser] = useState<ListedUser | null>(null)
   const [leavingId, setLeavingId] = useState<string | number | null>(null)
   const [removing, setRemoving] = useState(false)
@@ -267,8 +269,17 @@ export default function AdminUsersPage() {
             <Button
               type="button"
               size="sm"
+              className="h-10 bg-blue-800 px-3 text-white hover:bg-blue-900"
+              onClick={() => setAdding(true)}
+            >
+              <Plus />
+              Add user
+            </Button>
+            <Button
+              type="button"
+              size="sm"
               variant="outline"
-              className="h-10 px-3 bg-blue-800 text-white hover:bg-blue-900 cursor-pointer hover:text-white"
+              className="h-10 cursor-pointer bg-blue-800 px-3 text-white hover:bg-blue-900 hover:text-white"
               disabled={loading}
               onClick={refresh}
             >
@@ -482,9 +493,19 @@ export default function AdminUsersPage() {
           </div>
         </AlertDialogContent>
       </AlertDialog>
+      <AddUserModal
+        open={adding}
+        branches={branches.flatMap((item) => (item.value ? [item.value] : []))}
+        onOpenChangeAction={setAdding}
+        onAddedAction={() => {
+          setPage(1)
+          refresh()
+        }}
+      />
       <UpdateUserModal
         open={editing !== null}
         user={editing}
+        branches={branches.flatMap((item) => (item.value ? [item.value] : []))}
         onOpenChangeAction={(open) => {
           if (!open) setEditing(null)
         }}
