@@ -98,7 +98,7 @@ export default function AdminAccountsPage() {
               type="button"
               size="sm"
               variant="outline"
-              className="h-10 px-3"
+              className="h-10 px-3 text-blue-950 hover:bg-blue-50 hover:text-blue-950 bg-blue-500 text-white shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-600 hover:text-white hover:shadow-md cursor-pointer"
               disabled={loading}
               onClick={refresh}
             >
@@ -163,7 +163,7 @@ export default function AdminAccountsPage() {
                       asChild
                       size="sm"
                       variant="outline"
-                      className="bg-white"
+                      className="action-hover bg-blue-500 text-white"
                     >
                       <Link
                         href={`/admin/account-ledger/${encodeURIComponent(account.internalId)}`}

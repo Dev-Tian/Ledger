@@ -269,7 +269,7 @@ export default function AdminUsersPage() {
             <Button
               type="button"
               size="sm"
-              className="h-10 bg-blue-800 px-3 text-white hover:bg-blue-900"
+              className="action-hover h-10 bg-blue-800 px-3 text-white cursor-pointer"
               onClick={() => setAdding(true)}
             >
               <Plus />
@@ -279,7 +279,7 @@ export default function AdminUsersPage() {
               type="button"
               size="sm"
               variant="outline"
-              className="h-10 cursor-pointer bg-blue-800 px-3 text-white hover:bg-blue-900 hover:text-white"
+              className="action-hover h-10 bg-blue-800 px-3 text-white cursor-pointer"
               disabled={loading}
               onClick={refresh}
             >
@@ -364,18 +364,18 @@ export default function AdminUsersPage() {
                           type="button"
                           size="icon-sm"
                           variant="outline"
-                          className="bg-white"
+                          className="action-hover bg-white text-blue-700 cursor-pointer"
                           aria-label={`Edit ${name}`}
                           disabled={user.id == null}
                           onClick={() => setEditing(user)}
                         >
-                          <Pencil className="text-blue-700" />
+                          <Pencil />
                         </Button>
                         <Button
                           type="button"
                           size="icon-sm"
                           variant="outline"
-                          className="bg-white"
+                          className="action-hover bg-white text-red-600 cursor-pointer"
                           aria-label={`Delete ${name}`}
                           disabled={user.id == null}
                           onClick={() => {
@@ -383,7 +383,7 @@ export default function AdminUsersPage() {
                             setDeletingUser(user)
                           }}
                         >
-                          <Trash2 className="text-red-600" />
+                          <Trash2 />
                         </Button>
                       </div>
                     </TableCell>

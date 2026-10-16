@@ -51,6 +51,7 @@
   --animate-toast-out: toast-out 500ms ease forwards;
   --animate-user-remove: user-remove 700ms ease forwards;
   --animate-dialog-open: dialog-open 200ms ease-out;
+  --animate-account-view: account-view-hover 1s ease forwards;
 
   @keyframes page-fade {
     from {
@@ -69,6 +70,21 @@
     to {
       opacity: 1;
       transform: translateX(0);
+    }
+  }
+
+  @keyframes account-view-hover {
+    from {
+      background-color: #3b82f6;
+      translate: 0 0;
+      scale: 1;
+      box-shadow: 0 0 0 rgb(30 64 175 / 0);
+    }
+    to {
+      background-color: #1e3a8a;
+      translate: 0 -4px;
+      scale: 1.08;
+      box-shadow: 0 8px 16px rgb(30 64 175 / 0.35);
     }
   }
 
@@ -189,6 +205,24 @@
   html {
     @apply font-sans;
   }
+}
+
+.action-hover {
+  cursor: pointer;
+  transition:
+    translate 200ms ease,
+    scale 200ms ease,
+    box-shadow 200ms ease,
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.action-hover:hover {
+  translate: 0 -4px;
+  scale: 1.08;
+  background-color: #1e3a8a;
+  color: #fff;
+  box-shadow: 0 8px 16px rgb(30 64 175 / 0.35);
 }
 
 @utility bg-logo-tile {

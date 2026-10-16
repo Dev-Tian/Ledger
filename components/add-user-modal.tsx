@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState, type FormEvent } from "react"
+import { FileSpreadsheet } from "lucide-react"
 
 import { BranchCodeCombobox } from "@/components/branch-code-combobox"
+import { ExcelUploadModal } from "@/components/excel-upload-modal"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -31,6 +33,7 @@ export function AddUserModal({
   const [password, setPassword] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
+  const [uploadOpen, setUploadOpen] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -40,6 +43,7 @@ export function AddUserModal({
     setBranchCode("")
     setPassword("")
     setError("")
+    setUploadOpen(false)
   }, [open])
 
   async function submit(event: FormEvent) {
@@ -76,6 +80,7 @@ export function AddUserModal({
   }
 
   return (
+    <>
     <AlertDialog open={open} onOpenChange={onOpenChangeAction}>
       <AlertDialogContent className="w-[min(42rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!">
         <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-8 py-5 text-white">
@@ -134,12 +139,23 @@ export function AddUserModal({
             </label>
           </div>
           {error ? <p className="px-8 pb-2 text-sm text-red-600">{error}</p> : null}
-          <div className="flex justify-end gap-2 border-t bg-blue-50 px-8 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-blue-50 px-8 py-4">
             <Button
               type="button"
               size="sm"
               variant="outline"
-              className="bg-white px-4"
+              className="bg-blue-500 text-white cursor-pointer px-4"
+              onClick={() => setUploadOpen(true)}
+            >
+              <FileSpreadsheet />
+              Bulk upload
+            </Button>
+            <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="bg-red-500 text-white cursor-pointer shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-600 hover:text-white hover:shadow-md px-4"
               onClick={() => onOpenChangeAction(false)}
             >
               Cancel
@@ -147,14 +163,22 @@ export function AddUserModal({
             <Button
               type="submit"
               size="sm"
-              className="bg-blue-800 px-4 text-white hover:bg-blue-900"
+              className="bg-blue-800 text-white cursor-pointer shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-900 hover:text-white hover:shadow-md px-4"
               disabled={saving}
             >
               {saving ? "Adding" : "Add user"}
             </Button>
+          
+            </div>
           </div>
         </form>
       </AlertDialogContent>
     </AlertDialog>
+    <ExcelUploadModal
+      open={uploadOpen}
+      onOpenChangeAction={setUploadOpen}
+      title="users"
+    />
+    </>
   )
 }
