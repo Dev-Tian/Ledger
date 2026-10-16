@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { FileSpreadsheet } from "lucide-react"
 
 import {
@@ -10,28 +10,81 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
+import { toApiErrorMessage } from "@/lib/apiService"
 
 function isExcelFile(file: File) {
   const name = file.name.toLowerCase()
   return name.endsWith(".xls") || name.endsWith(".xlsx")
 }
 
+export const installmentColumns = [
+  "Internal ID",
+  "Customer name",
+  "Sales Order No.",
+  "Date of Purchase",
+  "Principal Date",
+  "Term",
+  "Monthly installment",
+  "Monthly principal",
+  "Monthly interest",
+  "Available amount",
+  "Total accounts receivable",
+  "Down Payment",
+  "Financed amount",
+  "Loan amount",
+]
+
+export const paymentColumns = [
+  "Document Number",
+  "Date",
+  "Name",
+  "OR Number",
+  "Maximum of Amount",
+  "Memo (Main)",
+  "Minimum of Sales Order Number - For DP",
+  "Minimum of Invoice Number - Leasing",
+  "Eligible For Rebate",
+  "Generic Collector",
+  "Location",
+]
+
 export function ExcelUploadModal({
   open,
   onOpenChangeAction,
   title,
+  columns,
+  onUpload,
 }: {
   open: boolean
   onOpenChangeAction: (open: boolean) => void
   title: string
+  columns?: string[]
+  onUpload?: (file: File) => Promise<void>
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const progressTimer = useRef<number | null>(null)
+  const uploadId = useRef(0)
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState("")
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  function stopProgress() {
+    if (progressTimer.current === null) return
+    window.clearInterval(progressTimer.current)
+    progressTimer.current = null
+  }
+
+  useEffect(() => stopProgress, [])
 
   function clearFile() {
+    uploadId.current += 1
+    stopProgress()
     setFile(null)
     setError("")
+    setUploading(false)
+    setProgress(0)
     if (inputRef.current) inputRef.current.value = ""
   }
 
@@ -70,7 +123,39 @@ export function ExcelUploadModal({
             event.preventDefault()
             if (!file) {
               setError("Choose an Excel file ending in .xls or .xlsx.")
+              return
             }
+            if (!onUpload) return
+            const currentUpload = uploadId.current + 1
+            uploadId.current = currentUpload
+            setUploading(true)
+            setProgress(8)
+            setError("")
+            stopProgress()
+            progressTimer.current = window.setInterval(() => {
+              setProgress((current) => {
+                if (current >= 90) return current
+                const step = current < 40 ? 7 : current < 70 ? 3 : 1
+                return Math.min(90, current + step)
+              })
+            }, 160)
+            void onUpload(file)
+              .then(() => {
+                if (uploadId.current !== currentUpload) return
+                stopProgress()
+                setProgress(100)
+                window.setTimeout(() => {
+                  if (uploadId.current !== currentUpload) return
+                  handleOpenChange(false)
+                }, 280)
+              })
+              .catch((uploadError: unknown) => {
+                if (uploadId.current !== currentUpload) return
+                stopProgress()
+                setUploading(false)
+                setProgress(0)
+                setError(toApiErrorMessage(uploadError, "That file could not be uploaded."))
+              })
           }}
         >
           <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border border-dashed border-blue-300 bg-blue-50 px-4 py-8 text-center">
@@ -81,6 +166,11 @@ export function ExcelUploadModal({
               {file ? file.name : "Choose an Excel file"}
             </span>
             <span className="text-xs text-muted-foreground">.xls or .xlsx</span>
+            {columns ? (
+              <span className="text-xs leading-5 text-blue-950">
+                {columns.join(" · ")}
+              </span>
+            ) : null}
             <input
               ref={inputRef}
               type="file"
@@ -89,12 +179,25 @@ export function ExcelUploadModal({
               onChange={(event) => chooseFile(event.target.files?.[0])}
             />
           </label>
+          {uploading ? (
+            <div className="flex flex-col gap-2">
+              <Progress
+                value={progress}
+                aria-label="Uploading file"
+                className="h-2 bg-blue-100 **:data-[slot=progress-indicator]:bg-blue-700"
+              />
+              <p className="text-xs font-medium text-blue-800 tabular-nums">
+                Uploading {Math.round(progress)}%
+              </p>
+            </div>
+          ) : null}
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <div className="flex justify-end gap-2">
             <Button
               type="button"
               size="sm"
               variant="outline"
+              className="bg-red-500  text-white cursor-pointer shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-600 hover:text-white hover:shadow-md px-4"
               onClick={() => handleOpenChange(false)}
             >
               Cancel
@@ -102,10 +205,10 @@ export function ExcelUploadModal({
             <Button
               type="submit"
               size="sm"
-              className="bg-blue-800 px-3 text-white hover:bg-blue-900"
-              disabled={!file}
+              className="bg-blue-800 px-3 text-white cursor-pointer shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-900 hover:text-white hover:shadow-md"
+              disabled={!file || uploading}
             >
-              Upload
+              {uploading ? "Uploading" : "Upload"}
             </Button>
           </div>
         </form>

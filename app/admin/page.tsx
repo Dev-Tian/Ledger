@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { BookOpen, Building2, CalendarClock, Receipt, Users, type LucideIcon } from "lucide-react"
 
-import { ExcelUploadModal } from "@/components/excel-upload-modal"
+import { ExcelUploadModal, installmentColumns, paymentColumns } from "@/components/excel-upload-modal"
+import { apiService } from "@/lib/apiService"
 import {
   Card,
   CardDescription,
@@ -81,6 +82,20 @@ export default function AdminDashboardPage() {
           if (!open) setUploadTitle(null)
         }}
         title={uploadTitle ?? "Payment"}
+        columns={
+          uploadTitle === "Installment"
+            ? installmentColumns
+            : uploadTitle === "Payment"
+              ? paymentColumns
+              : undefined
+        }
+        onUpload={
+          uploadTitle === "Installment"
+            ? (file) => apiService.uploadInstallments(file).then(() => undefined)
+            : uploadTitle === "Payment"
+              ? (file) => apiService.uploadPayments(file).then(() => undefined)
+              : undefined
+        }
       />
     </section>
   )

@@ -82,6 +82,21 @@ export const apiService = {
     const response = await api.delete(`/users/${user}`);
     return response.data;
   },
+  
+// UPLOAD API : Upload Installments
+  uploadInstallments: async (file: File): Promise<unknown> => {
+    const body = new FormData();
+    body.append("file", file);
+    const response = await api.post("/installments", body);
+    return response.data;
+  },
+
+  uploadPayments: async (file: File): Promise<unknown> => {
+    const body = new FormData();
+    body.append("file", file);
+    const response = await api.post("/payments", body);
+    return response.data;
+  },
 };
 
 export default apiService;
