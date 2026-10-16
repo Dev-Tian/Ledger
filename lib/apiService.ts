@@ -30,6 +30,30 @@ export const sanctum_csrf = async () => {
   }
 };
 
+function compactRows(rows: UploadRow[]): UploadRow[] {
+  return rows.map((row) => {
+    const compact: UploadRow = {};
+    for (const [key, value] of Object.entries(row)) {
+      if (value == null || value === "") continue;
+      compact[key] = value;
+    }
+    return compact;
+  });
+}
+
+async function postRows(path: string, rows: UploadRow[], message: string): Promise<unknown> {
+  const response = await api.post(
+    path,
+    { rows: compactRows(rows) },
+    { headers: { "Content-Type": "application/json" } },
+  );
+  const count = response.data?.inserted;
+  return {
+    message,
+    inserted: typeof count === "number" ? count : rows.length,
+  };
+}
+
 export const apiService = {
   login: async (email: string, password: string): Promise<unknown> => {
     await sanctum_csrf();
@@ -86,21 +110,11 @@ export const apiService = {
   
 // UPLOAD API : Upload Installments
   uploadInstallments: async (rows: UploadRow[]): Promise<unknown> => {
-    const response = await api.post(
-      "/installments",
-      { rows },
-      { headers: { "Content-Type": "application/json" } },
-    );
-    return response.data;
+    return postRows("/installments", rows, "Installments uploaded");
   },
 
   uploadPayments: async (rows: UploadRow[]): Promise<unknown> => {
-    const response = await api.post(
-      "/payments",
-      { rows },
-      { headers: { "Content-Type": "application/json" } },
-    );
-    return response.data;
+    return postRows("/payments", rows, "Payments uploaded");
   },
 };
 

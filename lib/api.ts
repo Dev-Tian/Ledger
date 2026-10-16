@@ -25,7 +25,9 @@ api.interceptors.response.use(
     }
 
     if (isNetworkFailure(error)) {
-      emitConnectionLost();
+      const url = String(error.config?.url ?? "");
+      const upload = url.includes("/installments") || url.includes("/payments");
+      if (!upload) emitConnectionLost();
     }
 
     return Promise.reject(error);
