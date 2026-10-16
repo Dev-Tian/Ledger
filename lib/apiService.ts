@@ -1,4 +1,5 @@
 import { api, sanctum } from "./api";
+import type { UploadRow } from "./sheet-rows";
 
 export function toApiErrorMessage(error: unknown, fallback: string): string {
   if (typeof error === "object" && error !== null && "response" in error) {
@@ -84,17 +85,21 @@ export const apiService = {
   },
   
 // UPLOAD API : Upload Installments
-  uploadInstallments: async (file: File): Promise<unknown> => {
-    const body = new FormData();
-    body.append("file", file);
-    const response = await api.post("/installments", body);
+  uploadInstallments: async (rows: UploadRow[]): Promise<unknown> => {
+    const response = await api.post(
+      "/installments",
+      { rows },
+      { headers: { "Content-Type": "application/json" } },
+    );
     return response.data;
   },
 
-  uploadPayments: async (file: File): Promise<unknown> => {
-    const body = new FormData();
-    body.append("file", file);
-    const response = await api.post("/payments", body);
+  uploadPayments: async (rows: UploadRow[]): Promise<unknown> => {
+    const response = await api.post(
+      "/payments",
+      { rows },
+      { headers: { "Content-Type": "application/json" } },
+    );
     return response.data;
   },
 };

@@ -12,6 +12,7 @@ import {
 import { ModalError } from "@/components/modal-error"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { uploadRows, type UploadRow } from "@/lib/sheet-rows"
 import { toApiErrorMessage } from "@/lib/apiService"
 
 function isExcelFile(file: File) {
@@ -61,7 +62,7 @@ export function ExcelUploadModal({
   onOpenChangeAction: (open: boolean) => void
   title: string
   columns?: string[]
-  onUpload?: (file: File) => Promise<void>
+  onUpload?: (rows: UploadRow[]) => Promise<void>
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const progressTimer = useRef<number | null>(null)
@@ -146,7 +147,8 @@ export function ExcelUploadModal({
                 return Math.min(90, current + step)
               })
             }, 160)
-            void onUpload(file)
+            void uploadRows(file, title)
+              .then((rows) => onUpload(rows))
               .then(() => {
                 if (uploadId.current !== currentUpload) return
                 stopProgress()

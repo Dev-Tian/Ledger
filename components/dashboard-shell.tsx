@@ -21,8 +21,8 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { InfoModalTrigger } from "@/components/info-modal"
 import { ProfileSettingsModal } from "@/components/profile-settings-modal"
-import { WelcomeModal } from "@/components/status-modals"
 import { useUser } from "@/contexts/UserContext"
 import { accountRole } from "@/hoc/withAuth"
 
@@ -36,6 +36,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -140,6 +141,24 @@ function HeaderClock() {
   )
 }
 
+function SidebarPanelToggle({ className }: { className?: string }) {
+  return (
+    <SidebarTrigger
+      className={`text-white hover:bg-blue-700 hover:text-white ${className ?? ""}`}
+    />
+  )
+}
+
+function SidebarEdgeToggle() {
+  const { state, isMobile, openMobile } = useSidebar()
+  const open = isMobile ? openMobile : state === "expanded"
+  if (open) return null
+
+  return (
+    <SidebarPanelToggle className="absolute top-3 left-3 z-30 bg-blue-800 shadow-md" />
+  )
+}
+
 function roleFromPath(pathname: string): DashboardRole {
   if (pathname.startsWith("/admin")) return "admin"
   if (pathname.startsWith("/uploader")) return "uploader"
@@ -164,16 +183,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     roleLabel[role]
   const items = navItems(role)
   const showSidebar = !pathname.includes("/account-ledger")
-  const [welcomeOpen, setWelcomeOpen] = useState(true)
   const [profileOpen, setProfileOpen] = useState(false)
 
   return (
     <TooltipProvider>
-      <WelcomeModal
-        open={welcomeOpen}
-        onOpenChangeAction={setWelcomeOpen}
-        role={roleLabel[role]}
-      />
       <ProfileSettingsModal
         open={profileOpen}
         onOpenChangeAction={setProfileOpen}
@@ -186,7 +199,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       >
         <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
         <header className="z-20 flex h-16 w-full shrink-0 items-center gap-3 border-b bg-white px-4">
-          {showSidebar ? <SidebarTrigger /> : null}
           <div className="flex items-center gap-3">
             <Image
               src="/smctt.png"
@@ -238,7 +250,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <div className="relative flex min-h-0 w-full flex-1 overflow-hidden">
+        {showSidebar ? <SidebarEdgeToggle /> : null}
         {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-blue-600 [&_[data-sidebar=sidebar]]:text-white">
+          <div className="flex justify-start px-2 pt-3">
+            <SidebarPanelToggle />
+          </div>
           <SidebarContent className="px-2 py-4">
             <SidebarGroup className="p-0">
               <SidebarMenu className="gap-1">
@@ -290,7 +306,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </SidebarInset>
         </div>
-        <footer className="relative z-20 w-full shrink-0 border-t border-blue-700 bg-blue-600 text-white">
+        <footer className="relative z-20 w-full shrink-0 border-t border-white/10 bg-gradient-to-r from-blue-800 via-blue-700 to-sky-600 text-white">
           <div className="flex w-full flex-wrap items-center justify-between gap-3 px-6 py-3">
             <div className="flex min-w-0 items-center gap-3">
               <Image
@@ -310,10 +326,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 </p>
               </div>
             </div>
-            <p className="text-xs text-blue-100">
-              Signed in as{" "}
-              <span className="font-medium text-white">{signedInLabel}</span>
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <InfoModalTrigger
+                topic="help"
+                className="bg-white/15 text-white hover:bg-white/25"
+              >
+                Assistance
+              </InfoModalTrigger>
+              <p className="text-xs text-blue-100">
+                Signed in as{" "}
+                <span className="font-medium text-white">{signedInLabel}</span>
+              </p>
+            </div>
           </div>
         </footer>
         </div>

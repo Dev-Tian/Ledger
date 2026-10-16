@@ -74,7 +74,7 @@ export function InfoModalTrigger({
         <AlertDialogContent
           className={
             topic === "help"
-              ? "gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-lg"
+              ? "w-[min(36rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!"
               : "gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-md"
           }
         >
@@ -125,8 +125,17 @@ function AboutBody() {
 function HelpBody() {
   return (
     <>
-      <div className="flex flex-col items-center gap-3 bg-blue-600 px-6 py-7 text-center text-white">
-        <div className="flex flex-col gap-1">
+      <div className="relative flex flex-col items-center gap-3 overflow-hidden bg-gradient-to-r from-blue-800 via-blue-700 to-sky-600 px-6 py-7 text-center text-white">
+        <Image
+          src="/smctt.png"
+          alt=""
+          width={1024}
+          height={569}
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 -right-8 h-36 w-auto -translate-y-1/2 opacity-25"
+          style={{ width: "auto", height: "9rem" }}
+        />
+        <div className="relative flex flex-col gap-1">
           <p className="text-xs font-medium tracking-wide text-blue-100 uppercase">
             Development team
           </p>
