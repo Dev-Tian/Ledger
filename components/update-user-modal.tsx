@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 
 import { BranchCodeCombobox } from "@/components/branch-code-combobox"
+import { RoleCombobox } from "@/components/role-combobox"
 import { ModalError } from "@/components/modal-error"
 import { LoadingState } from "@/components/loading-state"
 import {
@@ -99,8 +100,9 @@ export function UpdateUserModal({
     if (user?.id == null) return
     const nextName = name.trim()
     const nextEmail = email.trim()
-    if (!nextName || !nextEmail) {
-      setError("Fill in the name and email.")
+    const nextRole = role.trim().toLowerCase()
+    if (!nextName || !nextEmail || !nextRole) {
+      setError("Fill in the name, email, and role.")
       return
     }
     setSaving(true)
@@ -111,6 +113,7 @@ export function UpdateUserModal({
         email: nextEmail,
         code: code.trim(),
         branch_code: branchCode.trim(),
+        roles: [nextRole],
       })
       onUpdatedAction()
       onOpenChangeAction(false)
@@ -174,11 +177,7 @@ export function UpdateUserModal({
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-semibold text-blue-950">Role</span>
-                <Input
-                  readOnly
-                  value={role || "Not assigned"}
-                  className="h-11 bg-blue-50 text-base text-blue-950"
-                />
+                <RoleCombobox value={role} onValueChange={setRole} />
               </label>
             </div>
             {error ? (
