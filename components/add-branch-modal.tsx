@@ -8,6 +8,7 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ModalError } from "@/components/modal-error"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -89,7 +90,7 @@ export function AddBranchModal({
               className="h-10 bg-white text-blue-950"
             />
           </label>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <ModalError title="This branch was not added" message={error} /> : null}
           <div className="flex justify-end gap-2">
             <Button
               type="button"

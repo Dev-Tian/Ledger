@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 
 import { BranchCodeCombobox } from "@/components/branch-code-combobox"
+import { ModalError } from "@/components/modal-error"
 import { LoadingState } from "@/components/loading-state"
 import {
   AlertDialog,
@@ -180,7 +181,18 @@ export function UpdateUserModal({
                 />
               </label>
             </div>
-            {error ? <p className="px-8 pb-2 text-sm text-red-600">{error}</p> : null}
+            {error ? (
+              <div className="px-8 pb-4">
+                <ModalError
+                  title={
+                    error.includes("loaded")
+                      ? "This user could not be opened"
+                      : "This user was not saved"
+                  }
+                  message={error}
+                />
+              </div>
+            ) : null}
             <div className="flex justify-end gap-2 border-t bg-blue-50 px-8 py-4">
               <Button
                 type="button"

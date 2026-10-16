@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { FileSpreadsheet } from "lucide-react"
 
 import { BranchCodeCombobox } from "@/components/branch-code-combobox"
+import { ModalError } from "@/components/modal-error"
 import { ExcelUploadModal } from "@/components/excel-upload-modal"
 import {
   AlertDialog,
@@ -138,7 +139,11 @@ export function AddUserModal({
               <Input readOnly value="Employee" className="h-11 bg-blue-50 text-base text-blue-950" />
             </label>
           </div>
-          {error ? <p className="px-8 pb-2 text-sm text-red-600">{error}</p> : null}
+          {error ? (
+            <div className="px-8 pb-4">
+              <ModalError title="This user was not added" message={error} />
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-blue-50 px-8 py-4">
             <Button
               type="button"

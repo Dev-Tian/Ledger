@@ -9,6 +9,7 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ModalError } from "@/components/modal-error"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { toApiErrorMessage } from "@/lib/apiService"
@@ -66,7 +67,7 @@ export function ExcelUploadModal({
   const progressTimer = useRef<number | null>(null)
   const uploadId = useRef(0)
   const [file, setFile] = useState<File | null>(null)
-  const [error, setError] = useState("")
+  const [error, setError] = useState<{ title: string; message: string } | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
 
@@ -82,7 +83,7 @@ export function ExcelUploadModal({
     uploadId.current += 1
     stopProgress()
     setFile(null)
-    setError("")
+    setError(null)
     setUploading(false)
     setProgress(0)
     if (inputRef.current) inputRef.current.value = ""
@@ -100,17 +101,20 @@ export function ExcelUploadModal({
     }
     if (!isExcelFile(selected)) {
       setFile(null)
-      setError("Choose an Excel file ending in .xls or .xlsx.")
+      setError({
+        title: "Wrong file type",
+        message: "Choose a spreadsheet that ends in .xls or .xlsx.",
+      })
       if (inputRef.current) inputRef.current.value = ""
       return
     }
-    setError("")
+    setError(null)
     setFile(selected)
   }
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent className="gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-md">
+      <AlertDialogContent className="w-[min(32rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!">
         <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-6 py-4 text-white">
           <AlertDialogTitle className="text-lg">Upload {title}</AlertDialogTitle>
           <AlertDialogDescription className="text-blue-100">
@@ -122,7 +126,10 @@ export function ExcelUploadModal({
           onSubmit={(event) => {
             event.preventDefault()
             if (!file) {
-              setError("Choose an Excel file ending in .xls or .xlsx.")
+              setError({
+                title: "No file selected",
+                message: "Choose an Excel file, then upload it.",
+              })
               return
             }
             if (!onUpload) return
@@ -130,7 +137,7 @@ export function ExcelUploadModal({
             uploadId.current = currentUpload
             setUploading(true)
             setProgress(8)
-            setError("")
+            setError(null)
             stopProgress()
             progressTimer.current = window.setInterval(() => {
               setProgress((current) => {
@@ -154,11 +161,22 @@ export function ExcelUploadModal({
                 stopProgress()
                 setUploading(false)
                 setProgress(0)
-                setError(toApiErrorMessage(uploadError, "That file could not be uploaded."))
+                setError({
+                  title: "Upload did not finish",
+                  message: toApiErrorMessage(uploadError, "That file could not be uploaded."),
+                })
               })
           }}
         >
-          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border border-dashed border-blue-300 bg-blue-50 px-4 py-8 text-center">
+          <label
+            className={`flex flex-col items-center gap-3 rounded-2xl border border-dashed px-4 py-8 text-center ${
+              uploading ? "pointer-events-none" : "cursor-pointer"
+            } ${
+              error
+                ? "border-red-300 bg-red-50/70"
+                : "border-blue-300 bg-blue-50"
+            }`}
+          >
             <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-800 to-sky-500 text-white">
               <FileSpreadsheet className="size-5" />
             </span>
@@ -191,8 +209,8 @@ export function ExcelUploadModal({
               </p>
             </div>
           ) : null}
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <div className="flex justify-end gap-2">
+          {error ? <ModalError title={error.title} message={error.message} /> : null}
+          <div className="flex justify-end gap-2 border-t border-blue-100 pt-4">
             <Button
               type="button"
               size="sm"

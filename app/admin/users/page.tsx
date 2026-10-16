@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react"
 
 import { AddUserModal } from "@/components/add-user-modal"
+import { ModalError } from "@/components/modal-error"
 import { TableEmpty } from "@/components/table-empty"
 import { UpdateUserModal } from "@/components/update-user-modal"
 import {
@@ -475,7 +476,11 @@ export default function AdminUsersPage() {
                   <dd className="font-medium text-blue-950">{deletingUser.branch_code || "—"}</dd>
                 </div>
               </dl>
-              {deleteError ? <p className="mt-4 text-sm text-red-600">{deleteError}</p> : null}
+              {deleteError ? (
+                <div className="mt-4">
+                  <ModalError title="This user was not deleted" message={deleteError} />
+                </div>
+              ) : null}
             </div>
           ) : null}
           <div className="flex justify-end gap-2 border-t border-blue-100 bg-blue-50 px-6 py-4">
