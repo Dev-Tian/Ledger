@@ -19,6 +19,14 @@ const installmentHeaders: Record<string, string> = {
   "financed amount": "financed_amount",
   "loan amount": "loan_amount",
   loan: "loan_amount",
+  location: "location",
+  "first due date": "first_due_date",
+  first_due_date: "first_due_date",
+  "is rebated": "is_rebated",
+  is_rebated: "is_rebated",
+  rebated: "is_rebated",
+  item: "item",
+  "item unit": "item",
 }
 
 const paymentHeaders: Record<string, string> = {
@@ -35,7 +43,7 @@ const paymentHeaders: Record<string, string> = {
   location: "location",
 }
 
-const installmentDates = new Set(["date_of_purchase", "principal_date"])
+const installmentDates = new Set(["date_of_purchase", "principal_date", "first_due_date"])
 const installmentAmounts = new Set([
   "monthly_installment",
   "monthly_principal",
@@ -97,6 +105,12 @@ function cast(kind: "installment" | "payment", key: string, value: string | null
   if (!text) return null
   const dates = kind === "payment" ? key === "date" : installmentDates.has(key)
   if (dates) return excelDate(text)
+  if (kind === "installment" && key === "is_rebated") {
+    const answer = text.toLowerCase()
+    if (["yes", "y", "true", "1"].includes(answer)) return 1
+    if (["no", "n", "false", "0"].includes(answer)) return 0
+    return text
+  }
   if (kind === "installment" && key === "term") return Number.parseInt(text, 10)
   const amount = kind === "payment" ? key === "maximum_of_amount" : installmentAmounts.has(key)
   if (amount) {
