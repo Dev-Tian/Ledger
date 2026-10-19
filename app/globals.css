@@ -207,6 +207,25 @@
   }
 }
 
+@keyframes ledger-overview-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-overview-in {
+  animation: ledger-overview-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-landing-in {
+  animation: ledger-overview-in 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .action-hover {
   cursor: pointer;
   transition:

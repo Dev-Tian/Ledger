@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { BookOpen, Building2, CalendarClock, Receipt, Users, type LucideIcon } from "lucide-react"
 
 import { ExcelUploadModal } from "@/components/excel-upload-modal"
@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const statuses: { label: string; value: number; icon: LucideIcon }[] = [
   { label: "Total Accounts", value: 1, icon: BookOpen },
@@ -34,12 +35,37 @@ const areas: { title: string; description: string; icon: LucideIcon }[] = [
 
 export default function AdminDashboardPage() {
   const [uploadTitle, setUploadTitle] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 600)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   return (
     <section className="flex flex-col gap-8">
       <div className="grid gap-4 md:grid-cols-3">
-        {statuses.map((status) => (
-          <Card key={status.label} className="rounded-3xl bg-white shadow-md ring-blue-100">
+        {loading
+          ? statuses.map((status) => (
+              <Card
+                key={status.label}
+                className="animate-overview-in rounded-3xl bg-white shadow-md ring-blue-100"
+              >
+                <CardHeader className="flex flex-row items-center justify-between gap-4">
+                  <div className="flex flex-col gap-3">
+                    <Skeleton className="h-4 w-28 bg-blue-100" />
+                    <Skeleton className="h-8 w-16 bg-blue-100" />
+                  </div>
+                  <Skeleton className="size-11 rounded-2xl bg-blue-100" />
+                </CardHeader>
+              </Card>
+            ))
+          : statuses.map((status, index) => (
+          <Card
+            key={status.label}
+            className="animate-overview-in rounded-3xl bg-white shadow-md ring-blue-100"
+            style={{ animationDelay: `${index * 70}ms` }}
+          >
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
                 <CardDescription className="text-sm font-medium text-blue-800">
@@ -55,11 +81,12 @@ export default function AdminDashboardPage() {
         ))}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        {areas.map((area) => (
+        {areas.map((area, index) => (
           <button
             key={area.title}
             type="button"
-            className="group text-left"
+            className="group animate-overview-in text-left"
+            style={{ animationDelay: `${220 + index * 80}ms` }}
             onClick={() => setUploadTitle(area.title)}
           >
             <Card className="h-full rounded-3xl bg-white shadow-md ring-blue-100 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:ring-blue-400">

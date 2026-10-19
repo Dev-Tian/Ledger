@@ -9,6 +9,7 @@ import { LoadingState } from "@/components/loading-state"
 import { TableEmpty } from "@/components/table-empty"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import {
   Table,
@@ -95,29 +96,45 @@ export default function AdminReportsPage() {
   return (
     <section className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {summary.map((item) => (
-          <Card key={item.label} className="rounded-3xl bg-white shadow-md ring-blue-100">
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
-              <div>
-                <CardDescription className="text-sm font-medium text-blue-800">
-                  {item.label}
-                </CardDescription>
-                <CardTitle
-                  className={
-                    item.amber
-                      ? "mt-2 w-fit rounded-lg bg-amber-200 px-3 py-1 text-2xl tabular-nums text-blue-950"
-                      : "mt-2 text-2xl tabular-nums text-blue-950"
-                  }
-                >
-                  {item.value}
-                </CardTitle>
-              </div>
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-800 to-sky-500 text-white">
-                <item.icon className="size-5" />
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
+        {loading
+          ? summary.map((item) => (
+              <Card key={item.label} className="rounded-3xl bg-white shadow-md ring-blue-100">
+                <CardHeader className="flex flex-row items-center justify-between gap-4">
+                  <div className="flex flex-col gap-3">
+                    <Skeleton className="h-4 w-28 bg-blue-100" />
+                    <Skeleton
+                      className={
+                        item.amber ? "h-9 w-40 rounded-lg bg-amber-100" : "h-8 w-36 bg-blue-100"
+                      }
+                    />
+                  </div>
+                  <Skeleton className="size-11 shrink-0 rounded-2xl bg-blue-100" />
+                </CardHeader>
+              </Card>
+            ))
+          : summary.map((item) => (
+              <Card key={item.label} className="rounded-3xl bg-white shadow-md ring-blue-100">
+                <CardHeader className="flex flex-row items-center justify-between gap-4">
+                  <div>
+                    <CardDescription className="text-sm font-medium text-blue-800">
+                      {item.label}
+                    </CardDescription>
+                    <CardTitle
+                      className={
+                        item.amber
+                          ? "mt-2 w-fit rounded-lg bg-amber-200 px-3 py-1 text-2xl tabular-nums text-blue-950"
+                          : "mt-2 text-2xl tabular-nums text-blue-950"
+                      }
+                    >
+                      {item.value}
+                    </CardTitle>
+                  </div>
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-800 to-sky-500 text-white">
+                    <item.icon className="size-5" />
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
       </div>
 
       <div className="overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-blue-200">
