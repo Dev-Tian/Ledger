@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { FileSpreadsheet } from "lucide-react"
+import { FileSpreadsheet, TriangleAlert } from "lucide-react"
 
 import {
   AlertDialog,
@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { uploadRows, type UploadRow } from "@/lib/sheet-rows"
 import { toApiErrorMessage } from "@/lib/apiService"
+
+const maxFileBytes = 1024 * 1024
 
 function isExcelFile(file: File) {
   const name = file.name.toLowerCase()
@@ -73,6 +75,7 @@ export function ExcelUploadModal({
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [notice, setNotice] = useState<{ tone: "success" | "error"; description: string } | null>(null)
+  const [warningOpen, setWarningOpen] = useState(false)
 
   function stopProgress() {
     if (progressTimer.current === null) return
@@ -89,7 +92,48 @@ export function ExcelUploadModal({
     setError(null)
     setUploading(false)
     setProgress(0)
+    setWarningOpen(false)
     if (inputRef.current) inputRef.current.value = ""
+  }
+
+  function beginUpload() {
+    if (!file || !onUpload) return
+    const currentUpload = uploadId.current + 1
+    uploadId.current = currentUpload
+    setUploading(true)
+    setProgress(8)
+    setError(null)
+    stopProgress()
+    progressTimer.current = window.setInterval(() => {
+      setProgress((current) => {
+        if (current >= 90) return current
+        const step = current < 40 ? 7 : current < 70 ? 3 : 1
+        return Math.min(90, current + step)
+      })
+    }, 160)
+    void uploadRows(file, title)
+      .then((rows) => onUpload(rows))
+      .then(() => {
+        if (uploadId.current !== currentUpload) return
+        stopProgress()
+        setProgress(100)
+        setNotice({
+          tone: "success",
+          description: `${title} was uploaded.`,
+        })
+        handleOpenChange(false)
+      })
+      .catch((uploadError: unknown) => {
+        if (uploadId.current !== currentUpload) return
+        stopProgress()
+        setUploading(false)
+        setProgress(0)
+        setNotice({
+          tone: "error",
+          description: toApiErrorMessage(uploadError, "That file could not be uploaded."),
+        })
+        handleOpenChange(false)
+      })
   }
 
   function handleOpenChange(next: boolean) {
@@ -137,42 +181,7 @@ export function ExcelUploadModal({
               return
             }
             if (!onUpload) return
-            const currentUpload = uploadId.current + 1
-            uploadId.current = currentUpload
-            setUploading(true)
-            setProgress(8)
-            setError(null)
-            stopProgress()
-            progressTimer.current = window.setInterval(() => {
-              setProgress((current) => {
-                if (current >= 90) return current
-                const step = current < 40 ? 7 : current < 70 ? 3 : 1
-                return Math.min(90, current + step)
-              })
-            }, 160)
-            void uploadRows(file, title)
-              .then((rows) => onUpload(rows))
-              .then(() => {
-                if (uploadId.current !== currentUpload) return
-                stopProgress()
-                setProgress(100)
-                setNotice({
-                  tone: "success",
-                  description: `${title} was uploaded.`,
-                })
-                handleOpenChange(false)
-              })
-              .catch((uploadError: unknown) => {
-                if (uploadId.current !== currentUpload) return
-                stopProgress()
-                setUploading(false)
-                setProgress(0)
-                setNotice({
-                  tone: "error",
-                  description: toApiErrorMessage(uploadError, "That file could not be uploaded."),
-                })
-                handleOpenChange(false)
-              })
+            setWarningOpen(true)
           }}
         >
           <label
@@ -237,6 +246,49 @@ export function ExcelUploadModal({
             </Button>
           </div>
         </form>
+      </AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={warningOpen} onOpenChange={setWarningOpen}>
+      <AlertDialogContent className="w-[min(28rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-amber-200 sm:max-w-none!">
+        <div className="flex flex-col items-center gap-3 bg-amber-500 px-6 py-7 text-center text-white">
+          <span className="flex size-12 items-center justify-center rounded-full bg-white text-amber-600 shadow-sm">
+            <TriangleAlert className="size-6" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-medium tracking-wide uppercase">Warning</p>
+            <AlertDialogTitle className="text-lg text-white">Check the file size</AlertDialogTitle>
+            <AlertDialogDescription className="text-amber-50">
+              The Excel file must not exceed 1MB.
+              {file && file.size > maxFileBytes
+                ? " This file is larger than 1MB, so it cannot be uploaded."
+                : " Continue only if this file is within that size."}
+            </AlertDialogDescription>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 bg-white px-6 py-4">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="cursor-pointer bg-white px-4 text-blue-950"
+            onClick={() => setWarningOpen(false)}
+          >
+            {file && file.size > maxFileBytes ? "Back" : "Cancel"}
+          </Button>
+          {file && file.size <= maxFileBytes ? (
+            <Button
+              type="button"
+              size="sm"
+              className="cursor-pointer bg-amber-500 px-3 text-white hover:bg-amber-600"
+              onClick={() => {
+                setWarningOpen(false)
+                beginUpload()
+              }}
+            >
+              Continue
+            </Button>
+          ) : null}
+        </div>
       </AlertDialogContent>
     </AlertDialog>
     <SuccessModal
