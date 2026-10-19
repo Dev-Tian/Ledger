@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { BookOpen, Building2, CalendarClock, Receipt, Users, type LucideIcon } from "lucide-react"
 
 import { ExcelUploadModal } from "@/components/excel-upload-modal"
@@ -19,17 +20,18 @@ const statuses: { label: string; value: number; icon: LucideIcon }[] = [
   { label: "Total branches", value: 2, icon: Building2 },
 ]
 
-const areas: { title: string; description: string; icon: LucideIcon }[] = [
- 
+const areas: { title: string; description: string; icon: LucideIcon; image: string }[] = [
   {
     title: "Installment",
     description: "Upload installment records that set or update an account schedule.",
     icon: CalendarClock,
+    image: "/schedule.png",
   },
   {
     title: "Payment",
     description: "Upload payment records for collections posted against installment accounts.",
     icon: Receipt,
+    image: "/atm-card.png",
   },
 ]
 
@@ -89,8 +91,8 @@ export default function AdminDashboardPage() {
             style={{ animationDelay: `${220 + index * 80}ms` }}
             onClick={() => setUploadTitle(area.title)}
           >
-            <Card className="h-full rounded-3xl bg-white shadow-md ring-blue-100 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:ring-blue-400">
-              <CardHeader className="flex flex-col gap-4">
+            <Card className="relative h-full overflow-visible cursor-pointer rounded-3xl bg-white shadow-md ring-blue-100 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:ring-blue-400">
+              <CardHeader className="relative z-10 flex flex-col gap-4">
                 <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-800 to-sky-500 text-white">
                   <area.icon className="size-5" />
                 </div>
@@ -99,6 +101,14 @@ export default function AdminDashboardPage() {
                   {area.description}
                 </CardDescription>
               </CardHeader>
+              <Image
+                src={area.image}
+                alt=""
+                width={256}
+                height={256}
+                className="pointer-events-none absolute -top-6 -right-6 z-20 h-24 w-auto origin-bottom-left -translate-x-6 scale-75 opacity-0 transition duration-300 group-hover:scale-100 group-hover:opacity-100"
+                style={{ width: "auto", height: "6rem" }}
+              />
             </Card>
           </button>
         ))}

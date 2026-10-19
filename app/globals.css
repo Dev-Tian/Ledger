@@ -226,6 +226,49 @@
   animation: ledger-overview-in 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.status-check-ring,
+.status-error-ring {
+  stroke-dasharray: 58;
+  stroke-dashoffset: 58;
+  animation: status-draw 480ms ease forwards;
+}
+
+.status-check-mark,
+.status-error-mark {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: status-draw 360ms ease 320ms forwards;
+}
+
+.status-error-badge {
+  animation: status-error-shake 620ms ease 280ms both;
+}
+
+@keyframes status-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes status-error-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
 .action-hover {
   cursor: pointer;
   transition:

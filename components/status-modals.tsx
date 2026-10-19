@@ -1,6 +1,5 @@
 "use client"
 
-import { CircleAlert, CircleCheck } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useRef } from "react"
 
@@ -16,6 +15,7 @@ type StatusModalProps = {
   onOpenChangeAction: (open: boolean) => void
   title: string
   description: string
+  durationMs?: number
 }
 
 function StatusModal({
@@ -23,6 +23,7 @@ function StatusModal({
   onOpenChangeAction,
   title,
   description,
+  durationMs = 2000,
   tone,
 }: StatusModalProps & { tone: "success" | "error" }) {
   const success = tone === "success"
@@ -31,9 +32,9 @@ function StatusModal({
 
   useEffect(() => {
     if (!open) return
-    const timer = window.setTimeout(() => onOpenChangeRef.current(false), 2000)
+    const timer = window.setTimeout(() => onOpenChangeRef.current(false), durationMs)
     return () => window.clearTimeout(timer)
-  }, [open])
+  }, [open, durationMs])
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChangeAction}>
@@ -41,22 +42,51 @@ function StatusModal({
         size="sm"
         className={
           success
-            ? "gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-sm"
+            ? "gap-0 overflow-hidden p-0 shadow-lg ring-green-200 sm:max-w-sm"
             : "gap-0 overflow-hidden p-0 shadow-lg ring-red-200 sm:max-w-sm"
         }
       >
         <div
           className={
             success
-              ? "flex flex-col items-center gap-3 bg-blue-600 px-6 py-7 text-center text-white"
-              : "flex flex-col items-center gap-3 bg-red-700 px-6 py-7 text-center text-white"
+              ? "flex flex-col items-center gap-3 bg-green-600 px-6 py-7 text-center text-white"
+              : "flex flex-col items-center gap-3 bg-red-600 px-6 py-7 text-center text-white"
           }
         >
-          <div className="flex size-12 items-center justify-center rounded-full bg-white shadow-sm">
+          <div
+            key={open ? tone : "closed"}
+            className={`flex size-12 items-center justify-center rounded-full bg-white shadow-sm ${
+              success ? "" : "status-error-badge"
+            }`}
+          >
             {success ? (
-              <CircleCheck className="size-6 text-blue-700" />
+              <svg
+                viewBox="0 0 24 24"
+                className="size-7 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="9" className="status-check-ring" />
+                <path d="M8 12.5 10.8 15.2 16.2 9.2" className="status-check-mark" />
+              </svg>
             ) : (
-              <CircleAlert className="size-6 text-red-700" />
+              <svg
+                viewBox="0 0 24 24"
+                className="size-7 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="9" className="status-error-ring" />
+                <path d="M9 9l6 6M15 9l-6 6" className="status-error-mark" />
+              </svg>
             )}
           </div>
           <div className="flex flex-col gap-1">
@@ -65,7 +95,7 @@ function StatusModal({
             </p>
             <AlertDialogTitle className="text-lg text-white">{title}</AlertDialogTitle>
             <AlertDialogDescription
-              className={success ? "text-blue-100" : "text-red-100"}
+              className={success ? "text-green-100" : "text-red-100"}
             >
               {description}
             </AlertDialogDescription>

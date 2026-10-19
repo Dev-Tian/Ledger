@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ModalError } from "@/components/modal-error"
+import { ErrorModal, SuccessModal } from "@/components/status-modals"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { uploadRows, type UploadRow } from "@/lib/sheet-rows"
@@ -71,6 +72,7 @@ export function ExcelUploadModal({
   const [error, setError] = useState<{ title: string; message: string } | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; description: string } | null>(null)
 
   function stopProgress() {
     if (progressTimer.current === null) return
@@ -114,6 +116,7 @@ export function ExcelUploadModal({
   }
 
   return (
+    <>
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent className="w-[min(32rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!">
         <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-6 py-4 text-white">
@@ -153,20 +156,22 @@ export function ExcelUploadModal({
                 if (uploadId.current !== currentUpload) return
                 stopProgress()
                 setProgress(100)
-                window.setTimeout(() => {
-                  if (uploadId.current !== currentUpload) return
-                  handleOpenChange(false)
-                }, 280)
+                setNotice({
+                  tone: "success",
+                  description: `${title} was uploaded.`,
+                })
+                handleOpenChange(false)
               })
               .catch((uploadError: unknown) => {
                 if (uploadId.current !== currentUpload) return
                 stopProgress()
                 setUploading(false)
                 setProgress(0)
-                setError({
-                  title: "Upload did not finish",
-                  message: toApiErrorMessage(uploadError, "That file could not be uploaded."),
+                setNotice({
+                  tone: "error",
+                  description: toApiErrorMessage(uploadError, "That file could not be uploaded."),
                 })
+                handleOpenChange(false)
               })
           }}
         >
@@ -234,5 +239,24 @@ export function ExcelUploadModal({
         </form>
       </AlertDialogContent>
     </AlertDialog>
+    <SuccessModal
+      open={notice?.tone === "success"}
+      onOpenChangeAction={(next) => {
+        if (!next) setNotice(null)
+      }}
+      title="Upload finished"
+      description={notice?.tone === "success" ? notice.description : ""}
+      durationMs={3000}
+    />
+    <ErrorModal
+      open={notice?.tone === "error"}
+      onOpenChangeAction={(next) => {
+        if (!next) setNotice(null)
+      }}
+      title="Upload did not finish"
+      description={notice?.tone === "error" ? notice.description : ""}
+      durationMs={3000}
+    />
+    </>
   )
 }
