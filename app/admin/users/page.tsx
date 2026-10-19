@@ -289,13 +289,13 @@ export default function AdminUsersPage() {
             </Button>
           </div>
         </div>
-        <Table>
-          <TableHeader className="bg-blue-50/80 text-blue-950">
+        <Table containerClassName="max-h-[32rem] overflow-y-auto">
+          <TableHeader className="sticky top-0 z-10 bg-blue-50 text-blue-950">
             <TableRow className="hover:bg-transparent">
               {columns.map((column) => (
                 <TableHead
                   key={column}
-                  className="h-11 px-5 text-xs font-semibold tracking-wide text-blue-800 uppercase"
+                  className="h-11 bg-blue-50 px-5 text-xs font-semibold tracking-wide text-blue-800 uppercase"
                 >
                   {column}
                 </TableHead>

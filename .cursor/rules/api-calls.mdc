@@ -7,6 +7,8 @@ alwaysApply: true
 
 Follow the Smct-Eval split. Do not add fetch wrappers, a bearer-token store, or a third API file.
 
+Do not edit the Laravel backend when adding an API. That includes `Smct-Ledger-server`: no controllers, routes, models, or migrations. Add the call only in this frontend, on `apiService`. If the server route is missing, say the method and path the backend should expose and stop there.
+
 `lib/api.ts` only creates the Axios clients and exports them:
 
 - `api` uses `NEXT_PUBLIC_API_URL` (`http://localhost:8000/api`)

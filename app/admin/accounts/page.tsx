@@ -9,6 +9,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/loading-state"
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import { apiService, toApiErrorMessage } from "@/lib/apiService"
+import {
   Table,
   TableBody,
   TableCell,
@@ -27,11 +37,73 @@ const columns = [
 ]
 
 type Account = {
+  id: string
   internalId: string
   customerName: string
   purchaseDate: string
   salesOrderNo: string
   location: string
+}
+
+const purchaseDate = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+})
+
+function formatPurchaseDate(value: string) {
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`)
+  if (!value || Number.isNaN(date.getTime())) return value || "—"
+  return purchaseDate.format(date)
+}
+
+function textOf(value: unknown) {
+  return typeof value === "string" || typeof value === "number" ? String(value) : ""
+}
+
+function readAccounts(payload: unknown): Account[] {
+  if (!payload || typeof payload !== "object") return []
+  const accounts = (payload as { accounts?: { data?: unknown } | unknown[] }).accounts
+  const list = Array.isArray(accounts)
+    ? accounts
+    : accounts && typeof accounts === "object" && Array.isArray(accounts.data)
+      ? accounts.data
+      : []
+  return list.flatMap((item) => {
+    if (!item || typeof item !== "object") return []
+    const row = item as Record<string, unknown>
+    const id = textOf(row.id)
+    if (!id) return []
+    return [{
+      id,
+      internalId: textOf(row.internal_id) || "—",
+      customerName: textOf(row.customer_name) || "—",
+      purchaseDate: formatPurchaseDate(textOf(row.purchase_date)),
+      salesOrderNo: textOf(row.so_number) || "—",
+      location: textOf(row.location) || "—",
+    }]
+  })
+}
+
+function readAccountPage(payload: unknown, count: number) {
+  const record = payload && typeof payload === "object"
+    ? (payload as { accounts?: { current_page?: number; last_page?: number } }).accounts
+    : null
+  const currentPage = record?.current_page && record.current_page > 0 ? record.current_page : 1
+  const lastPage = record?.last_page && record.last_page > 0 ? record.last_page : 1
+  return { currentPage, lastPage: Math.max(lastPage, count > 0 ? 1 : 1) }
+}
+
+function pageNumbers(current: number, last: number) {
+  if (last <= 7) return Array.from({ length: last }, (_, index) => index + 1)
+  const items: (number | "ellipsis")[] = [1]
+  if (current > 3) items.push("ellipsis")
+  for (let page = Math.max(2, current - 1); page <= Math.min(last - 1, current + 1); page += 1) {
+    items.push(page)
+  }
+  if (current < last - 2) items.push("ellipsis")
+  items.push(last)
+  return items
 }
 
 function initials(name: string) {
@@ -40,34 +112,58 @@ function initials(name: string) {
   return letters.join("") || "?"
 }
 
-const accounts: Account[] = [
-  {
-    internalId: "ACC-1001",
-    customerName: "Maria Santos",
-    purchaseDate: "Oct 14, 2026",
-    salesOrderNo: "SO-24081",
-    location: "Cebu",
-  },
-]
-
 export default function AdminAccountsPage() {
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
   const [query, setQuery] = useState("")
-  const shown = useMemo(() => {
-    const text = query.trim().toLowerCase()
-    if (!text) return accounts
-    return accounts.filter((account) =>
-      [account.internalId, account.customerName, account.purchaseDate, account.salesOrderNo, account.location].some(
-        (value) => value.toLowerCase().includes(text),
-      ),
-    )
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [lastPage, setLastPage] = useState(1)
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [error, setError] = useState("")
+  const shown = useMemo(() => accounts, [accounts])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = query.trim()
+      setSearch((current) => {
+        if (current !== next) setPage(1)
+        return next
+      })
+    }, 300)
+    return () => window.clearTimeout(timer)
   }, [query])
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 600)
-    return () => window.clearTimeout(timer)
-  }, [reloadKey])
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await apiService.getAccounts(page, search)
+        if (!cancelled) {
+          const next = readAccounts(data)
+          const pager = readAccountPage(data, next.length)
+          setAccounts(next)
+          setPage(pager.currentPage)
+          setLastPage(pager.lastPage)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setAccounts([])
+          setError(toApiErrorMessage(loadError, "Accounts could not be loaded."))
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [page, reloadKey, search])
 
   function refresh() {
     setLoading(true)
@@ -127,17 +223,17 @@ export default function AdminAccountsPage() {
                   <LoadingState />
                 </TableCell>
               </TableRow>
-            ) : shown.length === 0 ? (
+            ) : error || shown.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={columns.length} className="px-5 py-6 text-center">
                   <TableEmpty
-                    label={accounts.length === 0 ? "" : "No accounts match that search."}
+                    label={error || (search ? "No accounts match that search." : "No accounts are listed yet.")}
                   />
                 </TableCell>
               </TableRow>
             ) : (
               shown.map((account) => (
-                <TableRow key={account.internalId} className="hover:bg-blue-50/70">
+                <TableRow key={account.id} className="hover:bg-blue-50/70">
                   <TableCell className="px-5 py-3">
                     <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200">
                       {account.internalId}
@@ -166,7 +262,7 @@ export default function AdminAccountsPage() {
                       className="action-hover bg-blue-500 text-white"
                     >
                       <Link
-                        href={`/admin/account-ledger/${encodeURIComponent(account.internalId)}`}
+                        href={`/admin/account-ledger/${encodeURIComponent(account.id)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -179,6 +275,57 @@ export default function AdminAccountsPage() {
             )}
           </TableBody>
         </Table>
+        <div className="border-t border-blue-100 bg-blue-50/50 px-4 py-3">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  text="Previous"
+                  className={page <= 1 ? "pointer-events-none opacity-40" : "text-blue-950"}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    if (page > 1) setPage(page - 1)
+                  }}
+                />
+              </PaginationItem>
+              {pageNumbers(page, lastPage).map((item, index) => (
+                <PaginationItem key={item === "ellipsis" ? `ellipsis-${index}` : item}>
+                  {item === "ellipsis" ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      href="#"
+                      isActive={item === page}
+                      className={
+                        item === page
+                          ? "border-blue-800 bg-blue-800 text-white hover:bg-blue-900 hover:text-white"
+                          : "text-blue-950"
+                      }
+                      onClick={(event) => {
+                        event.preventDefault()
+                        setPage(item)
+                      }}
+                    >
+                      {item}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  text="Next"
+                  className={page >= lastPage ? "pointer-events-none opacity-40" : "text-blue-950"}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    if (page < lastPage) setPage(page + 1)
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </div>
     </section>
   )

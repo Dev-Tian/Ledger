@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useParams } from "next/navigation"
 import { Search } from "lucide-react"
 
 import { BranchInfoForm } from "@/components/branch-info-form"
 import { CustomerSetupForm } from "@/components/customer-setup-form"
-import { ledgerCustomers, matchesCustomer, type LedgerCustomer } from "@/components/ledger-customers"
+import { type LedgerCustomer } from "@/components/ledger-customers"
+import { apiService, toApiErrorMessage } from "@/lib/apiService"
 import { LoadingState } from "@/components/loading-state"
 import { TableEmpty } from "@/components/table-empty"
 import { Button } from "@/components/ui/button"
@@ -137,9 +139,11 @@ function LoanLedgerSummary({
 
 function RecordTable({
   columns,
+  rows,
   empty,
 }: {
   columns: readonly string[]
+  rows: string[][]
   empty: string
 }) {
   return (
@@ -155,11 +159,23 @@ function RecordTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow>
-            <TableCell colSpan={columns.length} className="px-4 py-6 text-center">
-              <TableEmpty label={empty} />
-            </TableCell>
-          </TableRow>
+          {rows.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="px-4 py-6 text-center">
+                <TableEmpty label={empty} />
+              </TableCell>
+            </TableRow>
+          ) : (
+            rows.map((row, index) => (
+              <TableRow key={`${row[0]}-${index}`}>
+                {row.map((cell, cellIndex) => (
+                  <TableCell key={`${columns[cellIndex]}-${index}`} className="px-4">
+                    {cell || "—"}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>
@@ -170,38 +186,234 @@ function LedgerPanel({
   title,
   customer,
   columns,
+  rows,
   empty,
 }: {
   title: string
   customer: LedgerCustomer
   columns: readonly string[]
+  rows: string[][]
   empty: string
 }) {
   return (
     <div className="flex flex-col gap-4">
       <LoanLedgerSummary title={title} customer={customer} />
-      <RecordTable columns={columns} empty={empty} />
+      <RecordTable columns={columns} rows={rows} empty={empty} />
     </div>
   )
+}
+
+const purchaseDate = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+})
+
+function textOf(value: unknown) {
+  return typeof value === "string" || typeof value === "number" ? String(value) : ""
+}
+
+function formatDate(value: string) {
+  if (!value) return "—"
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return value
+  return purchaseDate.format(date)
+}
+
+function money(value: unknown) {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? peso.format(amount) : "—"
+}
+
+type LedgerLine = {
+  installment_number?: unknown
+  due_date?: unknown
+  payment_date?: unknown
+  payment_ref?: unknown
+  penalty?: unknown
+  rebate?: unknown
+  monthly_installment_paid?: unknown
+  monthly_principal_paid?: unknown
+  monthly_interest_paid?: unknown
+  penalty_paid?: unknown
+  overdue?: unknown
+  balance_wo_penalty?: unknown
+  balance_w_penalty?: unknown
+}
+
+function readAccount(payload: unknown) {
+  const account = payload && typeof payload === "object" ? (payload as { account?: Record<string, unknown> }).account : null
+  if (!account) return null
+  const customer: LedgerCustomer = {
+    internalId: textOf(account.internal_id),
+    customerName: textOf(account.customer_name),
+    customerId: textOf(account.customer_id),
+    purchaseDate: formatDate(textOf(account.purchase_date)),
+    salesOrderNo: textOf(account.sales_order_no),
+    location: textOf(account.location),
+    itemUnit: textOf(account.item),
+    loanStartDate: textOf(account.loan_start_date).slice(0, 10),
+    loanStartLabel: formatDate(textOf(account.loan_start_date)),
+    loanAmount: textOf(account.loan_amount),
+    downPayment: textOf(account.down_payment),
+    termMonths: textOf(account.term),
+    rebateAmount: "",
+    financedAmount: textOf(account.financed_amount),
+    monthlyInterest: textOf(account.monthly_interest),
+    monthlyInstallment: textOf(account.monthly_installment),
+    branchName: "",
+    branchCode: "",
+    preparedBy: "",
+    approver: "",
+    contactNo: "",
+    templateVersion: "",
+    loanStatus: textOf(account.loan_status),
+    currentBalance: Number(account.current_balance) || 0,
+    totalPayments: Number(account.total_payments) || 0,
+    totalAmountDue: Number(account.total_amount_due) || 0,
+    totalBalanceDue: Number(account.total_balance_due) || 0,
+    unrecoveredCost: Number(account.unrecovered_cost) || 0,
+    notes: "",
+  }
+  const lines = Array.isArray(account.ledgers) ? (account.ledgers as LedgerLine[]) : []
+  const monthlyInstallment = textOf(account.monthly_installment)
+  const monthlyPrincipal = textOf(account.monthly_principal)
+  const monthlyInterest = textOf(account.monthly_interest)
+  const rebated = account.is_rebated ? "Yes" : "No"
+  const ledgerRows = lines.map((line) => {
+    const paid = [line.monthly_principal_paid, line.monthly_interest_paid, line.penalty_paid].some((value) => Number(value) > 0)
+    const breakdown = paid
+      ? `Principal ${money(line.monthly_principal_paid)} · Interest ${money(line.monthly_interest_paid)} · Penalty ${money(line.penalty_paid)}`
+      : ""
+    return [
+      textOf(line.installment_number),
+      formatDate(textOf(line.due_date)),
+      formatDate(textOf(line.payment_date)),
+      textOf(line.payment_ref),
+      money(monthlyInstallment),
+      money(monthlyPrincipal),
+      money(monthlyInterest),
+      money(line.penalty),
+      money(line.rebate),
+      money(line.monthly_installment_paid),
+      money(line.monthly_principal_paid),
+      money(line.monthly_interest_paid),
+      money(line.penalty_paid),
+      money(line.overdue),
+      money(line.balance_wo_penalty),
+      money(line.balance_w_penalty),
+      breakdown,
+    ]
+  })
+  const payments = lines.flatMap((line) => {
+    if (!textOf(line.payment_date)) return []
+    return [[
+      formatDate(textOf(line.payment_date)),
+      textOf(line.payment_ref),
+      money(line.monthly_installment_paid),
+      money(line.penalty_paid),
+      money(line.monthly_installment_paid),
+      money(0),
+      "",
+      textOf(account.location),
+      "",
+      "Posted",
+      rebated,
+    ]]
+  })
+  return { id: textOf(account.id), customer, ledgerRows, payments }
+}
+
+type AccountMatch = {
+  id: string
+  internalId: string
+  customerName: string
+  purchaseDate: string
+  salesOrderNo: string
+  location: string
+}
+
+function readMatches(payload: unknown): AccountMatch[] {
+  if (!payload || typeof payload !== "object") return []
+  const accounts = (payload as { accounts?: { data?: unknown } | unknown[] }).accounts
+  const list = Array.isArray(accounts)
+    ? accounts
+    : accounts && typeof accounts === "object" && Array.isArray(accounts.data)
+      ? accounts.data
+      : []
+  return list.flatMap((item) => {
+    if (!item || typeof item !== "object") return []
+    const row = item as Record<string, unknown>
+    const id = textOf(row.id)
+    if (!id) return []
+    return [{
+      id,
+      internalId: textOf(row.internal_id),
+      customerName: textOf(row.customer_name),
+      purchaseDate: formatDate(textOf(row.purchase_date)),
+      salesOrderNo: textOf(row.so_number),
+      location: textOf(row.location),
+    }]
+  })
 }
 
 const resultColumns = ["Internal ID", "Customer name", "Date of purchase", "Sales order No.", "Location"]
 
 export function AccountLedgerView({ searchable = false }: { searchable?: boolean }) {
+  const params = useParams<{ internalId?: string }>()
+  const routeId = typeof params.internalId === "string" ? decodeURIComponent(params.internalId) : ""
   const [tab, setTab] = useState<AccountLedgerTab>(tabs[0])
   const [query, setQuery] = useState("")
   const [resultsOpen, setResultsOpen] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
-  const [selected, setSelected] = useState<LedgerCustomer>(ledgerCustomers[0])
-  const [loading, setLoading] = useState(true)
+  const [matches, setMatches] = useState<AccountMatch[]>([])
+  const [selected, setSelected] = useState<LedgerCustomer | null>(null)
+  const [ledgerRows, setLedgerRows] = useState<string[][]>([])
+  const [payments, setPayments] = useState<string[][]>([])
+  const [accountKey, setAccountKey] = useState(routeId)
+  const [loading, setLoading] = useState(Boolean(routeId))
+  const [error, setError] = useState("")
   const skipSearch = useRef(false)
-  const matches = ledgerCustomers.filter((customer) => matchesCustomer(customer, query))
 
   useEffect(() => {
-    setLoading(true)
-    const timer = window.setTimeout(() => setLoading(false), 600)
-    return () => window.clearTimeout(timer)
-  }, [selected.internalId])
+    if (!accountKey) return
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await apiService.getAccount(accountKey)
+        const next = readAccount(data)
+        if (!cancelled) {
+          if (!next) {
+            setSelected(null)
+            setLedgerRows([])
+            setPayments([])
+            setError("Account not found.")
+          } else {
+            setSelected(next.customer)
+            setLedgerRows(next.ledgerRows)
+            setPayments(next.payments)
+          }
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setSelected(null)
+          setLedgerRows([])
+          setPayments([])
+          setError(toApiErrorMessage(loadError, "That account could not be loaded."))
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [accountKey])
 
   useEffect(() => {
     if (!searchable) return
@@ -209,15 +421,32 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
       skipSearch.current = false
       return
     }
-    if (query.trim() === "") {
+    const text = query.trim()
+    if (text === "") {
       setSearchLoading(false)
       setResultsOpen(false)
+      setMatches([])
       return
     }
     setResultsOpen(true)
     setSearchLoading(true)
-    const timer = window.setTimeout(() => setSearchLoading(false), 3500)
-    return () => window.clearTimeout(timer)
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      void apiService.getAccounts(1, text).then((data) => {
+        if (cancelled) return
+        setMatches(readMatches(data))
+        setSearchLoading(false)
+      }).catch((searchError) => {
+        if (cancelled) return
+        setMatches([])
+        setSearchLoading(false)
+        setError(toApiErrorMessage(searchError, "Accounts could not be searched."))
+      })
+    }, 300)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
   }, [query, searchable])
 
   return (
@@ -267,6 +496,10 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
           ) : (
             <LoadingState variant={tab === "Loan Ledger" ? "summary" : "fields"} />
           )
+        ) : error || !selected ? (
+          <div className="flex min-h-80 items-center justify-center rounded-xl bg-white shadow-md ring-1 ring-blue-200">
+            <TableEmpty label={error || "Search for an account."} />
+          </div>
         ) : tab === "Customer set-up" ? (
           <CustomerSetupForm customer={selected} />
         ) : tab === "Branch info" ? (
@@ -276,10 +509,11 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
             title="Per customer loan ledger"
             customer={selected}
             columns={loanLedgerColumns}
+            rows={ledgerRows}
             empty="No installments are listed yet."
           />
         ) : tab === "Payment history" ? (
-          <RecordTable columns={paymentHistoryColumns} empty="No payments are listed yet." />
+          <RecordTable columns={paymentHistoryColumns} rows={payments} empty="No payments are listed yet." />
         ) : (
           <div className="rounded-xl bg-white px-6 py-8 shadow-md ring-1 ring-blue-200">
             <h2 className="text-lg font-semibold tracking-tight">{tab}</h2>
@@ -328,11 +562,11 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
               <TableBody>
                 {matches.map((customer) => (
                     <TableRow
-                      key={customer.internalId}
+                      key={customer.id}
                       className="cursor-pointer"
                       onClick={() => {
                         skipSearch.current = true
-                        setSelected(customer)
+                        setAccountKey(customer.id)
                         setQuery(customer.customerName)
                         setSearchLoading(false)
                         setResultsOpen(false)

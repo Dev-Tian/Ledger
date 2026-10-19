@@ -108,6 +108,23 @@ export const apiService = {
     return response.data;
   },
   
+// ADMIN ACCOUNT API :
+  getAccounts: async (page = 1, search?: string): Promise<unknown> => {
+    const params: { page: number; per_page: number; search?: string } = {
+      page,
+      per_page: 10,
+    };
+    const text = search?.trim();
+    if (text) params.search = text;
+    const response = await api.get("/installments", { params });
+    return response.data;
+  },
+
+  getAccount: async (account: string | number): Promise<unknown> => {
+    const response = await api.get(`/installments/${encodeURIComponent(String(account))}`);
+    return response.data;
+  },
+
 // UPLOAD API : Upload Installments
   uploadInstallments: async (rows: UploadRow[]): Promise<unknown> => {
     return postRows("/installments", rows, "Installments uploaded");
