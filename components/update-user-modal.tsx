@@ -175,10 +175,10 @@ export function UpdateUserModal({
                   onValueChange={setBranchCode}
                 />
               </div>
-              <label className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-sm font-semibold text-blue-950">Role</span>
                 <RoleCombobox value={role} onValueChange={setRole} />
-              </label>
+              </div>
             </div>
             {error ? (
               <div className="px-8 pb-4">
