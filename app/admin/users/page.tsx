@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react"
 
 import { AddUserModal } from "@/components/add-user-modal"
+import { BranchCodeCombobox } from "@/components/branch-code-combobox"
 import { ModalError } from "@/components/modal-error"
 import { TableEmpty } from "@/components/table-empty"
 import { UpdateUserModal } from "@/components/update-user-modal"
@@ -15,16 +16,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxTrigger,
-  ComboboxValue,
-} from "@/components/ui/combobox"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/loading-state"
 import {
@@ -59,10 +50,6 @@ type ListedUser = {
 }
 
 const pageSize = 10
-
-type BranchOption = { value: string; label: string }
-
-const allBranches: BranchOption = { value: "", label: "All branches" }
 
 function pageNumbers(current: number, last: number) {
   if (last <= 7) return Array.from({ length: last }, (_, index) => index + 1)
@@ -108,18 +95,16 @@ function listedUsers(payload: unknown): ListedUser[] {
   return list.filter((item): item is ListedUser => !!item && typeof item === "object")
 }
 
-function listedBranches(payload: unknown): BranchOption[] {
-  if (!payload || typeof payload !== "object") return [allBranches]
+function listedBranches(payload: unknown): string[] {
+  if (!payload || typeof payload !== "object") return []
   const list = (payload as { branch_code?: unknown }).branch_code
-  if (!Array.isArray(list)) return [allBranches]
-  const options = list.flatMap((item) => {
+  if (!Array.isArray(list)) return []
+  return list.flatMap((item) => {
     if (!item || typeof item !== "object") return []
     const code = (item as { branch_code?: unknown }).branch_code
     if (typeof code !== "string" || !code.trim()) return []
-    const value = code.trim()
-    return [{ value, label: value }]
+    return [code.trim()]
   })
-  return [allBranches, ...options]
 }
 
 function displayName(user: ListedUser) {
@@ -141,8 +126,8 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<ListedUser[]>([])
   const [query, setQuery] = useState("")
   const [search, setSearch] = useState("")
-  const [branch, setBranch] = useState<BranchOption | null>(allBranches)
-  const [branches, setBranches] = useState<BranchOption[]>([allBranches])
+  const [branch, setBranch] = useState("")
+  const [branches, setBranches] = useState<string[]>([])
   const [editing, setEditing] = useState<ListedUser | null>(null)
   const [adding, setAdding] = useState(false)
   const [deletingUser, setDeletingUser] = useState<ListedUser | null>(null)
@@ -171,13 +156,13 @@ export default function AdminUsersPage() {
       try {
         const data = await apiService.getUsers(page, {
           search,
-          branch_code: branch?.value ?? "",
+          branch_code: branch,
         })
         if (!cancelled) {
           const next = readUserPage(data)
           const nextBranches = listedBranches(data)
           setUsers(next.users)
-          setBranches((current) => (nextBranches.length > 1 ? nextBranches : current))
+          setBranches((current) => (nextBranches.length > 0 ? nextBranches : current))
           setPage(next.currentPage)
           setLastPage(next.lastPage)
         }
@@ -243,30 +228,17 @@ export default function AdminUsersPage() {
                 className="h-10 bg-blue-50/60 pl-9"
               />
             </div>
-            <Combobox
-              items={branches}
+            <BranchCodeCombobox
+              branches={branches}
               value={branch}
+              allLabel="All branches"
+              placeholder="All branches"
+              className="h-10 min-w-44 justify-between bg-blue-50/60 px-3 text-sm font-normal text-blue-950 hover:bg-blue-50/60"
               onValueChange={(value) => {
                 setBranch(value)
                 setPage(1)
               }}
-              isItemEqualToValue={(item, selected) => item.value === selected.value}
-            >
-              <ComboboxTrigger className="flex h-10 min-w-44 items-center justify-between gap-2 rounded-lg border border-input bg-blue-50/60 px-3 text-sm text-blue-950">
-                <ComboboxValue placeholder="All branches" />
-              </ComboboxTrigger>
-              <ComboboxContent>
-                <ComboboxInput showTrigger={false} placeholder="Search branches" />
-                <ComboboxEmpty>No branches found.</ComboboxEmpty>
-                <ComboboxList>
-                  {(item: BranchOption) => (
-                    <ComboboxItem key={item.value || "all"} value={item}>
-                      {item.label}
-                    </ComboboxItem>
-                  )}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
+            />
             <Button
               type="button"
               size="sm"
@@ -320,7 +292,7 @@ export default function AdminUsersPage() {
                 <TableCell colSpan={columns.length} className="px-5 py-6 text-center">
                   <TableEmpty
                     label={
-                      search || branch?.value
+                      search || branch
                         ? "No users match that filter."
                         : "No users are listed yet."
                     }
@@ -500,7 +472,7 @@ export default function AdminUsersPage() {
       </AlertDialog>
       <AddUserModal
         open={adding}
-        branches={branches.flatMap((item) => (item.value ? [item.value] : []))}
+        branches={branches}
         onOpenChangeAction={setAdding}
         onAddedAction={() => {
           setPage(1)
@@ -510,7 +482,7 @@ export default function AdminUsersPage() {
       <UpdateUserModal
         open={editing !== null}
         user={editing}
-        branches={branches.flatMap((item) => (item.value ? [item.value] : []))}
+        branches={branches}
         onOpenChangeAction={(open) => {
           if (!open) setEditing(null)
         }}

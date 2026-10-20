@@ -167,14 +167,14 @@ export function UpdateUserModal({
                   className="h-11 bg-white text-base text-blue-950"
                 />
               </label>
-              <label className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-sm font-semibold text-blue-950">Branch code</span>
                 <BranchCodeCombobox
                   branches={branches}
                   value={branchCode}
                   onValueChange={setBranchCode}
                 />
-              </label>
+              </div>
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-semibold text-blue-950">Role</span>
                 <RoleCombobox value={role} onValueChange={setRole} />

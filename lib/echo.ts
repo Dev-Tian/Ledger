@@ -6,19 +6,15 @@ import { sanctum } from "@/lib/api";
 declare global {
   interface Window {
     Pusher: typeof Pusher;
+    Echo?: Echo<"reverb">;
   }
 }
 
 type ReverbEcho = Echo<"reverb">;
 
-const ACTIVITY_LOGS_CHANNEL =
-  process.env.NEXT_PUBLIC_ECHO_ACTIVITY_LOGS_CHANNEL ?? "activity-logs";
-
-const ACTIVITY_LOG_EVENTS = [
-  ".ActivityLogCreated",
-  ".log.created",
-  "ActivityLogCreated",
-] as const;
+/** Matches backend: Echo.private('logs').listen('.log.created', …) */
+const LOGS_CHANNEL = process.env.NEXT_PUBLIC_ECHO_LOGS_CHANNEL ?? "logs";
+const LOG_CREATED_EVENT = ".log.created";
 
 let echo: ReverbEcho | null = null;
 
@@ -67,6 +63,7 @@ export async function getEcho(): Promise<ReverbEcho | null> {
     }),
   });
 
+  window.Echo = echo;
   return echo;
 }
 
@@ -76,7 +73,7 @@ function eventPayload(event: unknown): unknown {
   return record.log ?? record.data ?? event;
 }
 
-/** Private channel `activity-logs` (override with NEXT_PUBLIC_ECHO_ACTIVITY_LOGS_CHANNEL). */
+/** Private channel `logs`, event `.log.created` (backend registers channel auth). */
 export async function subscribeActivityLogs(
   onLog: (payload: unknown) => void,
 ): Promise<() => void> {
@@ -87,15 +84,11 @@ export async function subscribeActivityLogs(
     onLog(eventPayload(event));
   };
 
-  const channel = client.private(ACTIVITY_LOGS_CHANNEL);
-  for (const name of ACTIVITY_LOG_EVENTS) {
-    channel.listen(name, handler);
-  }
+  const channel = client.private(LOGS_CHANNEL);
+  channel.listen(LOG_CREATED_EVENT, handler);
 
   return () => {
-    for (const name of ACTIVITY_LOG_EVENTS) {
-      channel.stopListening(name, handler);
-    }
-    client.leave(ACTIVITY_LOGS_CHANNEL);
+    channel.stopListening(LOG_CREATED_EVENT, handler);
+    client.leave(LOGS_CHANNEL);
   };
 }
