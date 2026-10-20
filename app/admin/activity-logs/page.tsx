@@ -15,62 +15,123 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { apiService, toApiErrorMessage } from "@/lib/apiService"
+import { subscribeActivityLogs } from "@/lib/echo"
 
 const columns = ["When", "User", "Action", "Area", "Detail"]
 
 const areas = ["All", "Users", "Uploads", "Accounts"] as const
 
+type ActivityAction = "Updated" | "Uploaded" | "Added" | "Deleted"
+
 type Activity = {
   id: string
   when: string
   user: string
-  action: "Updated" | "Uploaded" | "Added" | "Deleted"
-  area: (typeof areas)[number]
+  action: ActivityAction
+  area: Exclude<(typeof areas)[number], "All"> | "Other"
   detail: string
 }
 
-const logs: Activity[] = [
-  {
-    id: "log-1",
-    when: "Oct 16, 2026, 3:12 PM",
-    user: "Admin",
-    action: "Updated",
-    area: "Users",
-    detail: "Changed a user role",
-  },
-  {
-    id: "log-2",
-    when: "Oct 16, 2026, 1:26 PM",
-    user: "Admin",
-    action: "Uploaded",
-    area: "Uploads",
-    detail: "Uploaded a payment spreadsheet",
-  },
-  {
-    id: "log-3",
-    when: "Oct 16, 2026, 11:40 AM",
-    user: "Admin",
-    action: "Uploaded",
-    area: "Uploads",
-    detail: "Uploaded an installment spreadsheet",
-  },
-  {
-    id: "log-4",
-    when: "Oct 16, 2026, 10:05 AM",
-    user: "Admin",
-    action: "Added",
-    area: "Users",
-    detail: "Added an employee account",
-  },
-  {
-    id: "log-5",
-    when: "Oct 15, 2026, 4:18 PM",
-    user: "Admin",
-    action: "Updated",
-    area: "Accounts",
-    detail: "Opened account ACC-1001",
-  },
-]
+const whenFormat = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+})
+
+function textOf(value: unknown) {
+  return typeof value === "string" || typeof value === "number" ? String(value) : ""
+}
+
+function formatWhen(value: string) {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return whenFormat.format(date)
+}
+
+function inferAction(detail: string): ActivityAction {
+  const text = detail.toLowerCase()
+  if (text.includes("upload")) return "Uploaded"
+  if (text.includes("delet") || text.includes("removed")) return "Deleted"
+  if (text.includes("add") || text.includes("created")) return "Added"
+  return "Updated"
+}
+
+function inferArea(detail: string, action: ActivityAction): Activity["area"] {
+  const text = detail.toLowerCase()
+  if (text.includes("user") || text.includes("role") || text.includes("employee")) return "Users"
+  if (text.includes("upload") || text.includes("installment") || text.includes("payment") || text.includes("spreadsheet")) {
+    return "Uploads"
+  }
+  if (text.includes("account") || text.includes("ledger")) return "Accounts"
+  if (action === "Uploaded") return "Uploads"
+  if (action === "Added" || action === "Deleted") return "Users"
+  return "Other"
+}
+
+function inferUser(detail: string, fallback: string) {
+  if (fallback) return fallback
+  const match = detail.match(/^(.+?)\s+(uploaded|added|updated|deleted|removed)/i)
+  return match?.[1]?.trim() || "—"
+}
+
+function mapLogItem(item: unknown): Activity | null {
+  if (!item || typeof item !== "object") return null
+  const row = item as Record<string, unknown>
+  const id = textOf(row.id)
+  const detail = textOf(row.info) || textOf(row.detail) || textOf(row.message)
+  if (!id && !detail) return null
+  const action =
+    row.action === "Updated" ||
+    row.action === "Uploaded" ||
+    row.action === "Added" ||
+    row.action === "Deleted"
+      ? row.action
+      : inferAction(detail)
+  const areaValue = textOf(row.area)
+  const area =
+    areaValue === "Users" || areaValue === "Uploads" || areaValue === "Accounts"
+      ? areaValue
+      : inferArea(detail, action)
+  const user =
+    textOf(row.user) ||
+    textOf(row.user_name) ||
+    textOf((row.user as { name?: unknown } | undefined)?.name) ||
+    inferUser(detail, "")
+  return {
+    id: id || detail,
+    when: formatWhen(textOf(row.created_at) || textOf(row.when)),
+    user,
+    action,
+    area,
+    detail: detail || "—",
+  }
+}
+
+function readLogs(payload: unknown): Activity[] {
+  if (!payload || typeof payload !== "object") return []
+  const record = payload as {
+    logs?: { data?: unknown } | unknown[]
+    data?: unknown
+  }
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(record.logs)
+      ? record.logs
+      : record.logs && typeof record.logs === "object" && Array.isArray(record.logs.data)
+        ? record.logs.data
+        : Array.isArray(record.data)
+          ? record.data
+          : []
+
+  return list.flatMap((item) => {
+    const mapped = mapLogItem(item)
+    return mapped ? [mapped] : []
+  })
+}
 
 function initials(name: string) {
   const parts = name.split(/\s+/).filter(Boolean)
@@ -78,7 +139,7 @@ function initials(name: string) {
   return letters.join("") || "?"
 }
 
-function actionClass(action: Activity["action"]) {
+function actionClass(action: ActivityAction) {
   if (action === "Deleted") return "bg-red-50 text-red-700 ring-red-200"
   if (action === "Uploaded") return "bg-sky-50 text-sky-800 ring-sky-200"
   if (action === "Added") return "bg-emerald-50 text-emerald-800 ring-emerald-200"
@@ -89,23 +150,73 @@ export default function AdminActivityLogsPage() {
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
   const [query, setQuery] = useState("")
+  const [search, setSearch] = useState("")
   const [area, setArea] = useState<(typeof areas)[number]>("All")
+  const [logs, setLogs] = useState<Activity[]>([])
+  const [error, setError] = useState("")
 
   const shown = useMemo(() => {
-    const text = query.trim().toLowerCase()
-    return logs.filter((log) => {
-      if (area !== "All" && log.area !== area) return false
-      if (!text) return true
-      return [log.user, log.action, log.area, log.detail, log.when].some((value) =>
-        value.toLowerCase().includes(text),
-      )
-    })
-  }, [query, area])
+    if (area === "All") return logs
+    return logs.filter((log) => log.area === area)
+  }, [logs, area])
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 600)
+    const timer = window.setTimeout(() => {
+      setSearch(query.trim())
+    }, 300)
     return () => window.clearTimeout(timer)
-  }, [reloadKey])
+  }, [query])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await apiService.getActivityLogs(1, {
+          search,
+          area: area === "All" ? "" : area,
+        })
+        if (!cancelled) setLogs(readLogs(data))
+      } catch (loadError) {
+        if (!cancelled) {
+          setLogs([])
+          setError(toApiErrorMessage(loadError, "Activity logs could not be loaded."))
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [reloadKey, search, area])
+
+  useEffect(() => {
+    let active = true
+    let leave = () => {}
+
+    void subscribeActivityLogs((payload) => {
+      if (!active) return
+      const mapped = mapLogItem(payload)
+      if (!mapped) return
+      setLogs((prev) => {
+        if (prev.some((log) => log.id === mapped.id)) return prev
+        return [mapped, ...prev]
+      })
+    }).then((unsubscribe) => {
+      if (!active) unsubscribe()
+      else leave = unsubscribe
+    })
+
+    return () => {
+      active = false
+      leave()
+    }
+  }, [])
 
   function refresh() {
     setLoading(true)
@@ -181,10 +292,17 @@ export default function AdminActivityLogsPage() {
                   <LoadingState />
                 </TableCell>
               </TableRow>
-            ) : shown.length === 0 ? (
+            ) : error || shown.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={columns.length} className="px-5 py-6 text-center">
-                  <TableEmpty label="No activity matches that filter." />
+                  <TableEmpty
+                    label={
+                      error ||
+                      (search || area !== "All"
+                        ? "No activity matches that filter."
+                        : "No activity logs are listed yet.")
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ) : (

@@ -39,64 +39,78 @@ function StatusModal({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChangeAction}>
       <AlertDialogContent
-        size="sm"
         className={
           success
-            ? "gap-0 overflow-hidden p-0 shadow-lg ring-green-200 sm:max-w-sm"
-            : "gap-0 overflow-hidden p-0 shadow-lg ring-red-200 sm:max-w-sm"
+            ? "w-[min(24rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-xl ring-green-200 sm:max-w-none!"
+            : "w-[min(24rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-xl ring-red-200 sm:max-w-none!"
         }
       >
         <div
           className={
             success
-              ? "flex flex-col items-center gap-3 bg-green-600 px-6 py-7 text-center text-white"
-              : "flex flex-col items-center gap-3 bg-red-600 px-6 py-7 text-center text-white"
+              ? "h-2 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600"
+              : "h-2 bg-gradient-to-r from-red-500 via-rose-500 to-red-600"
+          }
+        />
+        <div
+          className={
+            success
+              ? "flex flex-col items-center gap-5 bg-gradient-to-b from-green-50 to-white px-8 pt-8 pb-9 text-center"
+              : "flex flex-col items-center gap-5 bg-gradient-to-b from-red-50 to-white px-8 pt-8 pb-9 text-center"
           }
         >
           <div
             key={open ? tone : "closed"}
-            className={`flex size-12 items-center justify-center rounded-full bg-white shadow-sm ${
-              success ? "" : "status-error-badge"
-            }`}
+            className={
+              success
+                ? "status-success-badge flex size-24 items-center justify-center rounded-full bg-white shadow-lg ring-8 ring-green-100"
+                : "status-error-badge flex size-24 items-center justify-center rounded-full bg-white shadow-lg ring-8 ring-red-100"
+            }
           >
             {success ? (
               <svg
-                viewBox="0 0 24 24"
-                className="size-7 text-green-600"
+                viewBox="0 0 48 48"
+                className="size-16 text-green-600"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2.5"
+                strokeWidth="3.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden
               >
-                <circle cx="12" cy="12" r="9" className="status-check-ring" />
-                <path d="M8 12.5 10.8 15.2 16.2 9.2" className="status-check-mark" />
+                <circle cx="24" cy="24" r="14" className="status-check-ring" />
+                <path d="M16 25.5 21.5 31 32 18.5" className="status-check-mark" />
               </svg>
             ) : (
               <svg
-                viewBox="0 0 24 24"
-                className="size-7 text-red-600"
+                viewBox="0 0 48 48"
+                className="size-16 text-red-600"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2.5"
+                strokeWidth="3.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden
               >
-                <circle cx="12" cy="12" r="9" className="status-error-ring" />
-                <path d="M9 9l6 6M15 9l-6 6" className="status-error-mark" />
+                <circle cx="24" cy="24" r="14" className="status-error-ring" />
+                <path d="M18 18l12 12M30 18l-12 12" className="status-error-mark" />
               </svg>
             )}
           </div>
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-medium tracking-wide uppercase">
+          <div className="flex flex-col gap-1.5">
+            <p
+              className={
+                success
+                  ? "text-xs font-semibold tracking-[0.16em] text-green-700 uppercase"
+                  : "text-xs font-semibold tracking-[0.16em] text-red-700 uppercase"
+              }
+            >
               {success ? "Success" : "Error"}
             </p>
-            <AlertDialogTitle className="text-lg text-white">{title}</AlertDialogTitle>
-            <AlertDialogDescription
-              className={success ? "text-green-100" : "text-red-100"}
-            >
+            <AlertDialogTitle className="text-xl font-semibold tracking-tight text-blue-950">
+              {title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm leading-6 text-muted-foreground">
               {description}
             </AlertDialogDescription>
           </div>

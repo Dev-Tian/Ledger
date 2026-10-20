@@ -125,6 +125,24 @@ export const apiService = {
     return response.data;
   },
 
+// ADMIN ACTIVITY LOGS API :
+  // Initial list: GET /logs. Live rows: Echo private channel (see lib/echo.ts).
+  getActivityLogs: async (
+    page = 1,
+    filters?: { search?: string; area?: string },
+  ): Promise<unknown> => {
+    const params: { page: number; per_page: number; search?: string; area?: string } = {
+      page,
+      per_page: 20,
+    };
+    const search = filters?.search?.trim();
+    const area = filters?.area?.trim();
+    if (search) params.search = search;
+    if (area && area.toLowerCase() !== "all") params.area = area;
+    const response = await api.get("/logs", { params });
+    return response.data;
+  },
+
 // UPLOAD API : Upload Installments
   uploadInstallments: async (rows: UploadRow[]): Promise<unknown> => {
     return postRows("/installments", rows, "Installments uploaded");

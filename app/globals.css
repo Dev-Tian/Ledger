@@ -228,25 +228,85 @@
 
 .status-check-ring,
 .status-error-ring {
-  stroke-dasharray: 58;
-  stroke-dashoffset: 58;
-  animation: status-draw 480ms ease forwards;
+  stroke-dasharray: 88;
+  stroke-dashoffset: 88;
+  animation: status-draw 560ms ease forwards;
 }
 
-.status-check-mark,
+.status-check-mark {
+  stroke-dasharray: 36;
+  stroke-dashoffset: 36;
+  animation: status-draw 420ms ease 360ms forwards;
+}
+
 .status-error-mark {
-  stroke-dasharray: 24;
-  stroke-dashoffset: 24;
-  animation: status-draw 360ms ease 320ms forwards;
+  stroke-dasharray: 36;
+  stroke-dashoffset: 36;
+  animation: status-draw 420ms ease 360ms forwards;
+}
+
+.status-success-badge {
+  animation: status-badge-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .status-error-badge {
-  animation: status-error-shake 620ms ease 280ms both;
+  animation:
+    status-badge-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    status-error-shake 620ms ease 360ms both;
+}
+
+.connection-modal-backdrop {
+  animation: connection-backdrop-in 280ms ease-out both;
+}
+
+.connection-modal-panel {
+  animation: connection-panel-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.connection-badge {
+  animation: status-badge-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.connection-badge-offline {
+  animation:
+    status-badge-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    status-error-shake 620ms ease 360ms both;
+}
+
+.connection-badge-restored {
+  animation: status-badge-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.connection-pulse-ring {
+  animation: connection-pulse 1.6s ease-out infinite;
+}
+
+.connection-signal {
+  animation: connection-signal-wave 1.4s ease-in-out infinite;
+}
+
+.connection-content-in {
+  animation: connection-content-in 420ms ease-out 80ms both;
 }
 
 @keyframes status-draw {
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+@keyframes status-badge-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -256,16 +316,74 @@
     transform: translateX(0);
   }
   20% {
-    transform: translateX(-4px);
+    transform: translateX(-6px);
   }
   40% {
-    transform: translateX(4px);
+    transform: translateX(6px);
   }
   60% {
-    transform: translateX(-3px);
+    transform: translateX(-4px);
   }
   80% {
-    transform: translateX(2px);
+    transform: translateX(3px);
+  }
+}
+
+@keyframes connection-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes connection-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes connection-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes connection-pulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes connection-signal-wave {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

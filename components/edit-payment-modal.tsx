@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react"
 
+import { LoadingState } from "@/components/loading-state"
 import { ModalError } from "@/components/modal-error"
 import type { ViewPayment } from "@/components/view-payment-modal"
 import {
@@ -85,11 +86,13 @@ export function EditPaymentModal({
   const [eligibleForRebate, setEligibleForRebate] = useState("")
   const [genericCollector, setGenericCollector] = useState("")
   const [location, setLocation] = useState("")
+  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
   useEffect(() => {
     if (!open || !payment) return
+    let cancelled = false
     setDocumentNumber(payment.documentNumber)
     setDate(payment.date)
     setName(payment.name)
@@ -103,6 +106,14 @@ export function EditPaymentModal({
     setLocation(payment.location)
     setError("")
     setSaving(false)
+    setLoading(true)
+    const timer = window.setTimeout(() => {
+      if (!cancelled) setLoading(false)
+    }, 400)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
   }, [open, payment])
 
   function submit(event: FormEvent) {
@@ -146,124 +157,130 @@ export function EditPaymentModal({
             Update this payment record.
           </AlertDialogDescription>
         </div>
-        <form onSubmit={submit}>
-          <div className="grid max-h-[min(36rem,60svh)] gap-x-4 gap-y-3 overflow-y-auto px-6 py-5 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-blue-950">Document number</span>
-              <Input
-                value={documentNumber}
-                onChange={(event) => setDocumentNumber(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-blue-950">Date</span>
-              <Input
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-sm font-semibold text-blue-950">Name</span>
-              <Input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-blue-950">OR number</span>
-              <Input
-                value={orNumber}
-                onChange={(event) => setOrNumber(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-blue-950">Maximum of amount</span>
-              <Input
-                inputMode="decimal"
-                value={maximumOfAmount}
-                onChange={(event) => setMaximumOfAmount(event.target.value)}
-                className="h-10 bg-white text-blue-950 tabular-nums"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-sm font-semibold text-blue-950">Memo (main)</span>
-              <Input
-                value={memoMain}
-                onChange={(event) => setMemoMain(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-blue-950">
-                Minimum of sales order number
-              </span>
-              <Input
-                value={minimumSalesOrderNumber}
-                onChange={(event) => setMinimumSalesOrderNumber(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-blue-950">
-                Minimum of invoice number - leasing
-              </span>
-              <Input
-                value={minimumInvoiceNumberLeasing}
-                onChange={(event) => setMinimumInvoiceNumberLeasing(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-blue-950">Eligible for rebate</span>
-              <YesNoDropdown value={eligibleForRebate} onValueChange={setEligibleForRebate} />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-blue-950">Generic collector</span>
-              <Input
-                value={genericCollector}
-                onChange={(event) => setGenericCollector(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-sm font-semibold text-blue-950">Location</span>
-              <Input
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-                className="h-10 bg-white text-blue-950"
-              />
-            </label>
-            {error ? (
-              <div className="sm:col-span-2">
-                <ModalError title="This payment was not saved" message={error} />
-              </div>
-            ) : null}
+        {loading ? (
+          <div className="bg-white">
+            <LoadingState />
           </div>
-          <div className="flex justify-end gap-2 border-t border-blue-100 bg-blue-50/50 px-6 py-4">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="cursor-pointer bg-white px-4 text-blue-950"
-              disabled={saving}
-              onClick={() => onOpenChangeAction(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              className="cursor-pointer bg-blue-800 px-3 text-white hover:bg-blue-900"
-              disabled={saving || !payment}
-            >
-              {saving ? "Saving" : "Save"}
-            </Button>
-          </div>
-        </form>
+        ) : (
+          <form onSubmit={submit}>
+            <div className="grid max-h-[min(36rem,60svh)] gap-x-4 gap-y-3 overflow-y-auto px-6 py-5 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-blue-950">Document number</span>
+                <Input
+                  value={documentNumber}
+                  onChange={(event) => setDocumentNumber(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-blue-950">Date</span>
+                <Input
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 sm:col-span-2">
+                <span className="text-sm font-semibold text-blue-950">Name</span>
+                <Input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-blue-950">OR number</span>
+                <Input
+                  value={orNumber}
+                  onChange={(event) => setOrNumber(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-blue-950">Maximum of amount</span>
+                <Input
+                  inputMode="decimal"
+                  value={maximumOfAmount}
+                  onChange={(event) => setMaximumOfAmount(event.target.value)}
+                  className="h-10 bg-white text-blue-950 tabular-nums"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 sm:col-span-2">
+                <span className="text-sm font-semibold text-blue-950">Memo (main)</span>
+                <Input
+                  value={memoMain}
+                  onChange={(event) => setMemoMain(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-blue-950">
+                  Minimum of sales order number
+                </span>
+                <Input
+                  value={minimumSalesOrderNumber}
+                  onChange={(event) => setMinimumSalesOrderNumber(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-blue-950">
+                  Minimum of invoice number - leasing
+                </span>
+                <Input
+                  value={minimumInvoiceNumberLeasing}
+                  onChange={(event) => setMinimumInvoiceNumberLeasing(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-blue-950">Eligible for rebate</span>
+                <YesNoDropdown value={eligibleForRebate} onValueChange={setEligibleForRebate} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-blue-950">Generic collector</span>
+                <Input
+                  value={genericCollector}
+                  onChange={(event) => setGenericCollector(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 sm:col-span-2">
+                <span className="text-sm font-semibold text-blue-950">Location</span>
+                <Input
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  className="h-10 bg-white text-blue-950"
+                />
+              </label>
+              {error ? (
+                <div className="sm:col-span-2">
+                  <ModalError title="This payment was not saved" message={error} />
+                </div>
+              ) : null}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-blue-100 bg-blue-50/50 px-6 py-4">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="cursor-pointer bg-white px-4 text-blue-950"
+                disabled={saving}
+                onClick={() => onOpenChangeAction(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="cursor-pointer bg-blue-800 px-3 text-white hover:bg-blue-900"
+                disabled={saving || !payment}
+              >
+                {saving ? "Saving" : "Save"}
+              </Button>
+            </div>
+          </form>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   )
