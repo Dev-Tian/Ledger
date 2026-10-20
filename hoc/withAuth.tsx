@@ -9,8 +9,8 @@ import { useUser, type User } from "@/contexts/UserContext";
 const roleDashboards: Record<string, string> = {
   admin: "/admin",
   uploader: "/uploader",
-  employee: "/viewer/customer-search",
-  viewer: "/viewer",
+  employee: "/viewer/accounts",
+  viewer: "/viewer/accounts",
 };
 
 interface WithAuthOptions {

@@ -7,16 +7,12 @@ import { useEffect, useState, type CSSProperties } from "react"
 import {
   BookOpen,
   Building2,
-  CalendarClock,
   Clock,
-  History,
   LayoutDashboard,
   Receipt,
   ScrollText,
-  Search,
   Settings,
   User,
-  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react"
@@ -53,21 +49,8 @@ function navItems(role: DashboardRole): NavItem[] {
         ? "/viewer"
         : "/uploader"
 
-  const ledger: NavItem[] = [
-    { href: `${base}/customer-setup`, label: "Customer setup", icon: UserRound },
-    { href: `${base}/loan-ledger`, label: "Loan ledger", icon: BookOpen },
-    { href: `${base}/payment-history`, label: "Payment history", icon: History },
-  ]
-
   if (role === "viewer") {
-    return [
-      ...ledger,
-      {
-        href: `${base}/manual-aging`,
-        label: "Manual aging",
-        icon: CalendarClock,
-      },
-    ]
+    return [{ href: `${base}/accounts`, label: "Accounts", icon: BookOpen }]
   }
 
   if (role === "uploader") {
@@ -78,7 +61,7 @@ function navItems(role: DashboardRole): NavItem[] {
   }
 
   if (role === "employee") {
-    return [{ href: "/viewer/customer-search", label: "Customer search", icon: Search }]
+    return [{ href: "/viewer/accounts", label: "Accounts", icon: BookOpen }]
   }
 
   return [

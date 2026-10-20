@@ -115,7 +115,7 @@ export function LoadingRedirect({
         const destinations: Record<string, string> = {
           admin: "/admin",
           uploader: "/uploader",
-          employee: "/viewer/customer-search",
+          employee: "/viewer/accounts",
           viewer: "/viewer",
         }
         router.push(signingOut ? "/" : destinations[role] ?? "/")
