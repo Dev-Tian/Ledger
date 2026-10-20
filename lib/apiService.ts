@@ -3,20 +3,31 @@ import type { UploadRow } from "./sheet-rows";
 
 export function toApiErrorMessage(error: unknown, fallback: string): string {
   if (typeof error === "object" && error !== null && "response" in error) {
-    const data = (error as { response?: { data?: unknown } }).response?.data;
+    const response = (error as { response?: { status?: number; data?: unknown } }).response;
+    // Backend may only expose POST /installments until GET list exists — don't surface that.
+    if (response?.status === 405) {
+      return "";
+    }
+    const data = response?.data;
     if (typeof data === "string" && data.trim() !== "") {
-      return data.trim();
+      const text = data.trim();
+      if (/method is not supported/i.test(text)) return "";
+      return text;
     }
     if (data && typeof data === "object") {
       const record = data as Record<string, unknown>;
       const message = record.message ?? record.error;
       if (typeof message === "string" && message.trim() !== "") {
-        return message.trim();
+        const text = message.trim();
+        if (/method is not supported/i.test(text)) return "";
+        return text;
       }
     }
   }
   if (error instanceof Error && error.message.trim() !== "") {
-    return error.message.trim();
+    const text = error.message.trim();
+    if (/method is not supported/i.test(text)) return "";
+    return text;
   }
   return fallback;
 }

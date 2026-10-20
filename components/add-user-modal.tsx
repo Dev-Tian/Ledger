@@ -4,8 +4,9 @@ import { useEffect, useState, type FormEvent } from "react"
 import { FileSpreadsheet } from "lucide-react"
 
 import { BranchCodeCombobox } from "@/components/branch-code-combobox"
-import { ModalError } from "@/components/modal-error"
 import { ExcelUploadModal } from "@/components/excel-upload-modal"
+import { ModalError } from "@/components/modal-error"
+import { RoleCombobox } from "@/components/role-combobox"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -32,6 +33,7 @@ export function AddUserModal({
   const [code, setCode] = useState("")
   const [branchCode, setBranchCode] = useState("")
   const [password, setPassword] = useState("")
+  const [role, setRole] = useState("employee")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -43,6 +45,7 @@ export function AddUserModal({
     setCode("")
     setBranchCode("")
     setPassword("")
+    setRole("employee")
     setError("")
     setUploadOpen(false)
   }, [open])
@@ -53,8 +56,9 @@ export function AddUserModal({
     const nextCode = code.trim()
     const nextBranch = branchCode.trim()
     const nextPassword = password.trim()
-    if (!nextName || !nextCode || !nextBranch || !nextPassword) {
-      setError("Fill in the name, code, branch code, and password.")
+    const nextRole = role.trim().toLowerCase()
+    if (!nextName || !nextCode || !nextBranch || !nextPassword || !nextRole) {
+      setError("Fill in the name, code, branch code, password, and role.")
       return
     }
     if (nextPassword.length < 8 || nextPassword.length > 20) {
@@ -70,6 +74,7 @@ export function AddUserModal({
         email: email.trim() || null,
         branch_code: nextBranch,
         password: nextPassword,
+        roles: [nextRole],
       })
       onAddedAction()
       onOpenChangeAction(false)
@@ -87,7 +92,7 @@ export function AddUserModal({
         <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-8 py-5 text-white">
           <AlertDialogTitle className="text-2xl">Add user</AlertDialogTitle>
           <AlertDialogDescription className="text-base text-blue-100">
-            Create a sign-in for the ledger. The new user is an employee.
+            Create a sign-in for the ledger and choose their role.
           </AlertDialogDescription>
         </div>
         <form onSubmit={(event) => void submit(event)}>
@@ -134,10 +139,10 @@ export function AddUserModal({
                 className="h-11 bg-white text-base text-blue-950"
               />
             </label>
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
               <span className="text-sm font-semibold text-blue-950">Role</span>
-              <Input readOnly value="Employee" className="h-11 bg-blue-50 text-base text-blue-950" />
-            </label>
+              <RoleCombobox value={role} onValueChange={setRole} />
+            </div>
           </div>
           {error ? (
             <div className="px-8 pb-4">
