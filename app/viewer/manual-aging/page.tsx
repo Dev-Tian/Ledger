@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export const instant = false
+
 
 const columns = [
   "Account",
@@ -22,8 +22,8 @@ const columns = [
 
 export default function ViewerManualAgingPage() {
   return (
-    <section className="flex flex-col gap-6">
-      <div className="max-w-xl">
+    <section className="flex h-[calc(100svh-11.5rem)] min-h-0 flex-col gap-6 sm:h-[calc(100svh-12.5rem)]">
+      <div className="max-w-xl shrink-0">
         <p className="text-sm font-medium text-blue-700">Viewer</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           Manual aging
@@ -33,8 +33,8 @@ export default function ViewerManualAgingPage() {
           been outstanding.
         </p>
       </div>
-      <Card className="overflow-hidden shadow-md ring-blue-200">
-        <CardHeader className="border-b border-blue-100 bg-white">
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden shadow-md ring-blue-200">
+        <CardHeader className="shrink-0 border-b border-blue-100 bg-white">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-full bg-blue-600 text-white">
               <CalendarClock className="size-5" />
@@ -45,12 +45,12 @@ export default function ViewerManualAgingPage() {
             </div>
           </div>
         </CardHeader>
-        <div className="overflow-x-auto">
+        <div className="min-h-0 flex-1 overflow-auto">
           <table className="w-full min-w-[40rem] text-left text-sm">
-            <thead className="bg-blue-50 text-blue-950">
+            <thead className="sticky top-0 z-10 bg-blue-50 text-blue-950">
               <tr>
                 {columns.map((column) => (
-                  <th key={column} className="px-4 py-3 font-medium">
+                  <th key={column} className="bg-blue-50 px-4 py-3 font-medium">
                     {column}
                   </th>
                 ))}

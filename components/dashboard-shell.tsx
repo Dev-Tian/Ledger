@@ -8,10 +8,10 @@ import {
   BookOpen,
   Building2,
   CalendarClock,
-  ClipboardList,
   Clock,
   History,
   LayoutDashboard,
+  Receipt,
   ScrollText,
   Search,
   Settings,
@@ -86,7 +86,7 @@ function navItems(role: DashboardRole): NavItem[] {
     { href: `${base}/accounts`, label: "Accounts", icon: BookOpen },
     { href: `${base}/users`, label: "Users", icon: Users },
     { href: `${base}/branches`, label: "Branches", icon: Building2 },
-    { href: `${base}/reports`, label: "Reports", icon: ClipboardList },
+    { href: `${base}/reports`, label: "Payments", icon: Receipt },
     { href: `${base}/activity-logs`, label: "Activity logs", icon: ScrollText },
   ]
 }

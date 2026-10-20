@@ -113,9 +113,9 @@ export default function AdminActivityLogsPage() {
   }
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-blue-200">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-blue-100 px-5 py-4">
+    <section className="flex h-[calc(100svh-11.5rem)] min-h-0 flex-col sm:h-[calc(100svh-12.5rem)]">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-blue-200">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b border-blue-100 px-5 py-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-blue-950">Activity logs</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -161,13 +161,13 @@ export default function AdminActivityLogsPage() {
             </Button>
           </div>
         </div>
-        <Table>
-          <TableHeader className="bg-blue-50/80 text-blue-950">
+        <Table containerClassName="min-h-0 flex-1 overflow-y-auto">
+          <TableHeader className="sticky top-0 z-10 bg-blue-50 text-blue-950">
             <TableRow className="hover:bg-transparent">
               {columns.map((column) => (
                 <TableHead
                   key={column}
-                  className="h-11 px-5 text-xs font-semibold tracking-wide text-blue-800 uppercase"
+                  className="h-11 bg-blue-50 px-5 text-xs font-semibold tracking-wide text-blue-800 uppercase"
                 >
                   {column}
                 </TableHead>

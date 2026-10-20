@@ -147,12 +147,12 @@ function RecordTable({
   empty: string
 }) {
   return (
-    <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
-      <Table>
-        <TableHeader className="bg-blue-50 text-blue-950">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
+      <Table containerClassName="min-h-0 flex-1 overflow-y-auto">
+        <TableHeader className="sticky top-0 z-10 bg-blue-50 text-blue-950">
           <TableRow>
             {columns.map((column) => (
-              <TableHead key={column} className="px-4 text-blue-950">
+              <TableHead key={column} className="bg-blue-50 px-4 text-blue-950">
                 {column}
               </TableHead>
             ))}
@@ -196,8 +196,10 @@ function LedgerPanel({
   empty: string
 }) {
   return (
-    <div className="flex flex-col gap-4">
-      <LoanLedgerSummary title={title} customer={customer} />
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <div className="shrink-0">
+        <LoanLedgerSummary title={title} customer={customer} />
+      </div>
       <RecordTable columns={columns} rows={rows} empty={empty} />
     </div>
   )
@@ -450,8 +452,8 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
   }, [query, searchable])
 
   return (
-    <section className="-mt-5.5 flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="-flex h-[calc(100svh-11.5rem)] min-h-0 flex-col gap-6 sm:h-[calc(100svh-12.5rem)]">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div role="tablist" aria-label="Account Ledger" className="flex flex-wrap gap-2">
           {tabs.map((item) => {
             const selected = tab === item
@@ -486,8 +488,8 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
           </div>
         ) : null}
       </div>
-      <div className="relative">
-      <div role="tabpanel">
+      <div className="relative min-h-0 flex-1">
+      <div role="tabpanel" className="flex h-full min-h-0 flex-col">
         {loading ? (
           tab === "Payment history" ? (
             <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
