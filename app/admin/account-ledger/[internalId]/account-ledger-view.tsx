@@ -215,6 +215,15 @@ function textOf(value: unknown) {
   return typeof value === "string" || typeof value === "number" ? String(value) : ""
 }
 
+function locationOf(value: unknown) {
+  if (typeof value === "string" || typeof value === "number") return String(value)
+  if (value && typeof value === "object") {
+    const record = value as { location_name?: unknown; name?: unknown }
+    return textOf(record.location_name) || textOf(record.name)
+  }
+  return ""
+}
+
 function formatDate(value: string) {
   if (!value) return "—"
   const date = new Date(`${value.slice(0, 10)}T00:00:00`)
@@ -252,7 +261,7 @@ function readAccount(payload: unknown) {
     customerId: textOf(account.customer_id),
     purchaseDate: formatDate(textOf(account.purchase_date)),
     salesOrderNo: textOf(account.sales_order_no),
-    location: textOf(account.location),
+    location: locationOf(account.location),
     itemUnit: textOf(account.item),
     loanStartDate: textOf(account.loan_start_date).slice(0, 10),
     loanStartLabel: formatDate(textOf(account.loan_start_date)),
@@ -354,7 +363,7 @@ function readMatches(payload: unknown): AccountMatch[] {
       customerName: textOf(row.customer_name),
       purchaseDate: formatDate(textOf(row.purchase_date)),
       salesOrderNo: textOf(row.so_number),
-      location: textOf(row.location),
+      location: locationOf(row.location),
     }]
   })
 }

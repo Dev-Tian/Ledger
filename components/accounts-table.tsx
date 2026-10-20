@@ -61,6 +61,15 @@ function textOf(value: unknown) {
   return typeof value === "string" || typeof value === "number" ? String(value) : ""
 }
 
+function locationOf(value: unknown) {
+  if (typeof value === "string" || typeof value === "number") return String(value)
+  if (value && typeof value === "object") {
+    const record = value as { location_name?: unknown; name?: unknown }
+    return textOf(record.location_name) || textOf(record.name)
+  }
+  return ""
+}
+
 function readAccounts(payload: unknown): Account[] {
   if (!payload || typeof payload !== "object") return []
   const accounts = (payload as { accounts?: { data?: unknown } | unknown[] }).accounts
@@ -81,7 +90,7 @@ function readAccounts(payload: unknown): Account[] {
         customerName: textOf(row.customer_name) || "—",
         purchaseDate: formatPurchaseDate(textOf(row.purchase_date)),
         salesOrderNo: textOf(row.so_number) || "—",
-        location: textOf(row.location) || "—",
+        location: locationOf(row.location) || "—",
       },
     ]
   })
