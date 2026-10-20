@@ -35,6 +35,14 @@ const peso = new Intl.NumberFormat("en-PH", {
   currency: "PHP",
 })
 
+export type PaymentRemark = {
+  id: string
+  action: "edited" | "voided"
+  by: string
+  at: string
+  detail?: string
+}
+
 export type ViewPayment = {
   id: string
   documentNumber: string
@@ -48,6 +56,8 @@ export type ViewPayment = {
   eligibleForRebate: string
   genericCollector: string
   location: string
+  voided?: boolean
+  remarks: PaymentRemark[]
 }
 
 export function ViewPaymentModal({
@@ -139,6 +149,49 @@ export function ViewPaymentModal({
                 ) : null}
               </TableBody>
             </Table>
+          </div>
+          <div className="mt-5 overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
+            <div className="border-b border-blue-100 bg-blue-50 px-4 py-3">
+              <h3 className="text-sm font-semibold tracking-tight text-blue-950">Remarks</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Record of who edited or voided this payment.
+              </p>
+            </div>
+            {payment && payment.remarks.length > 0 ? (
+              <ul className="divide-y divide-blue-100">
+                {payment.remarks.map((remark) => (
+                  <li
+                    key={remark.id}
+                    className={
+                      remark.action === "voided"
+                        ? "bg-red-50/80 px-4 py-3"
+                        : "bg-blue-50/70 px-4 py-3"
+                    }
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={
+                          remark.action === "voided"
+                            ? "inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-red-700 ring-1 ring-red-200"
+                            : "inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200"
+                        }
+                      >
+                        {remark.action === "voided" ? "Voided" : "Edited"}
+                      </span>
+                      <span className="text-sm font-medium text-blue-950">{remark.by}</span>
+                      <span className="text-xs text-muted-foreground">{remark.at}</span>
+                    </div>
+                    {remark.detail ? (
+                      <p className="mt-1.5 text-sm leading-5 text-blue-950/80">{remark.detail}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                No remarks are recorded yet.
+              </p>
+            )}
           </div>
         </div>
         <div className="flex justify-end border-t border-blue-100 bg-blue-50/50 px-6 py-4">

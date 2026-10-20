@@ -11,7 +11,57 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { ChevronDown } from "lucide-react"
+
+function YesNoDropdown({
+  value,
+  onValueChange,
+}: {
+  value: string
+  onValueChange: (value: string) => void
+}) {
+  const selected =
+    value.trim().toLowerCase() === "yes"
+      ? "Yes"
+      : value.trim().toLowerCase() === "no"
+        ? "No"
+        : ""
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 w-full justify-between bg-white px-3 text-sm font-normal text-blue-950 hover:bg-white"
+        >
+          <span className={selected ? "text-blue-950" : "text-muted-foreground"}>
+            {selected || "Select Yes or No"}
+          </span>
+          <ChevronDown className="size-4 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
+        <DropdownMenuRadioGroup value={selected} onValueChange={onValueChange}>
+          <DropdownMenuRadioItem value="Yes" className="cursor-pointer">
+            Yes
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="No" className="cursor-pointer">
+            No
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 export function EditPaymentModal({
   open,
@@ -169,12 +219,7 @@ export function EditPaymentModal({
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-semibold text-blue-950">Eligible for rebate</span>
-              <Input
-                value={eligibleForRebate}
-                onChange={(event) => setEligibleForRebate(event.target.value)}
-                placeholder="Yes or No"
-                className="h-10 bg-white text-blue-950"
-              />
+              <YesNoDropdown value={eligibleForRebate} onValueChange={setEligibleForRebate} />
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-semibold text-blue-950">Generic collector</span>

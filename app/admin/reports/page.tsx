@@ -10,6 +10,7 @@ import { ViewPaymentModal, type ViewPayment } from "@/components/view-payment-mo
 import { VoidPaymentModal } from "@/components/void-payment-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useUser } from "@/contexts/UserContext"
 import {
   Table,
   TableBody,
@@ -37,6 +38,14 @@ const peso = new Intl.NumberFormat("en-PH", {
 
 type PaymentRow = ViewPayment
 
+const remarkWhen = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+})
+
 const mockPayments: PaymentRow[] = [
   {
     id: "1",
@@ -51,6 +60,15 @@ const mockPayments: PaymentRow[] = [
     eligibleForRebate: "Yes",
     genericCollector: "Collector A",
     location: "Cebu",
+    remarks: [
+      {
+        id: "r1",
+        action: "edited",
+        by: "Dev Allan",
+        at: "Oct 14, 2026, 2:10 PM",
+        detail: "Updated memo after collection posting.",
+      },
+    ],
   },
   {
     id: "2",
@@ -65,6 +83,7 @@ const mockPayments: PaymentRow[] = [
     eligibleForRebate: "No",
     genericCollector: "Collector B",
     location: "Bohol",
+    remarks: [],
   },
   {
     id: "3",
@@ -79,6 +98,23 @@ const mockPayments: PaymentRow[] = [
     eligibleForRebate: "Yes",
     genericCollector: "Collector A",
     location: "Cebu",
+    remarks: [
+      {
+        id: "r2",
+        action: "edited",
+        by: "Dev Jenecil",
+        at: "Oct 16, 2026, 9:40 AM",
+        detail: "Corrected OR number.",
+      },
+      {
+        id: "r3",
+        action: "voided",
+        by: "Dev Zart",
+        at: "Oct 16, 2026, 4:05 PM",
+        detail: "Posted against the wrong sales order.",
+      },
+    ],
+    voided: true,
   },
   {
     id: "4",
@@ -93,6 +129,7 @@ const mockPayments: PaymentRow[] = [
     eligibleForRebate: "Yes",
     genericCollector: "Collector C",
     location: "Alano",
+    remarks: [],
   },
   {
     id: "5",
@@ -107,6 +144,7 @@ const mockPayments: PaymentRow[] = [
     eligibleForRebate: "No",
     genericCollector: "Collector B",
     location: "Cebu",
+    remarks: [],
   },
 ]
 
@@ -116,7 +154,16 @@ function initials(name: string) {
   return letters.join("") || "?"
 }
 
+function actorName(user: { name?: string; fname?: string; lname?: string } | null) {
+  return (
+    user?.name?.trim() ||
+    [user?.fname, user?.lname].filter(Boolean).join(" ").trim() ||
+    "Admin"
+  )
+}
+
 export default function AdminPaymentsPage() {
+  const { user } = useUser()
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
   const [query, setQuery] = useState("")
@@ -184,13 +231,17 @@ export default function AdminPaymentsPage() {
             </Button>
           </div>
         </div>
-        <Table containerClassName="min-h-0 flex-1 overflow-y-auto">
-          <TableHeader className="sticky top-0 z-10 bg-blue-50 text-blue-950">
+        <Table containerClassName="min-h-0 flex-1 overflow-auto">
+          <TableHeader className="sticky top-0 z-20 bg-blue-50 text-blue-950">
             <TableRow className="hover:bg-transparent">
               {columns.map((column) => (
                 <TableHead
                   key={column}
-                  className="h-11 bg-blue-50 px-5 text-xs font-semibold tracking-wide text-blue-800 uppercase"
+                  className={
+                    column === "Actions"
+                      ? "sticky right-0 z-30 h-11 bg-blue-50 px-5 text-xs font-semibold tracking-wide whitespace-nowrap text-blue-800 uppercase shadow-[-8px_0_12px_-8px_rgb(30_64_175_/_0.2)]"
+                      : "h-11 bg-blue-50 px-5 text-xs font-semibold tracking-wide whitespace-nowrap text-blue-800 uppercase"
+                  }
                 >
                   {column}
                 </TableHead>
@@ -217,10 +268,32 @@ export default function AdminPaymentsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              shown.map((payment) => (
-                <TableRow key={payment.id} className="hover:bg-blue-50/70">
+              shown.map((payment) => {
+                const edited = !payment.voided && payment.remarks.some((remark) => remark.action === "edited")
+                const rowTone = payment.voided
+                  ? "bg-red-50"
+                  : edited
+                    ? "bg-blue-50"
+                    : "bg-white"
+                return (
+                <TableRow
+                  key={payment.id}
+                  className={
+                    payment.voided
+                      ? "bg-red-50/80 hover:bg-red-50"
+                      : edited
+                        ? "bg-blue-50/80 hover:bg-blue-100/80"
+                        : "bg-white hover:bg-blue-50/70"
+                  }
+                >
                   <TableCell className="px-5 py-3">
-                    <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200">
+                    <span
+                      className={
+                        payment.voided
+                          ? "inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-red-700 ring-1 ring-red-200"
+                          : "inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200"
+                      }
+                    >
                       {payment.documentNumber}
                     </span>
                   </TableCell>
@@ -251,13 +324,15 @@ export default function AdminPaymentsPage() {
                       {payment.minimumSalesOrderNumber || "—"}
                     </span>
                   </TableCell>
-                  <TableCell className="px-5 py-3">
-                    <div className="flex items-center gap-1">
+                  <TableCell
+                    className={`sticky right-0 z-10 px-5 py-3 whitespace-nowrap shadow-[-8px_0_12px_-8px_rgb(30_64_175_/_0.18)] ${rowTone}`}
+                  >
+                    <div className="inline-flex shrink-0 items-center gap-1.5">
                       <Button
                         type="button"
                         size="icon-sm"
                         variant="outline"
-                        className="action-hover cursor-pointer bg-white text-blue-700"
+                        className="shrink-0 cursor-pointer bg-white text-blue-700 hover:bg-blue-50"
                         aria-label={`View ${payment.documentNumber}`}
                         onClick={() => setViewing(payment)}
                       >
@@ -267,8 +342,9 @@ export default function AdminPaymentsPage() {
                         type="button"
                         size="icon-sm"
                         variant="outline"
-                        className="action-hover cursor-pointer bg-white text-blue-700"
+                        className="shrink-0 cursor-pointer bg-white text-blue-700 hover:bg-blue-50"
                         aria-label={`Edit ${payment.documentNumber}`}
+                        disabled={payment.voided}
                         onClick={() => setEditing(payment)}
                       >
                         <Pencil />
@@ -277,8 +353,9 @@ export default function AdminPaymentsPage() {
                         type="button"
                         size="icon-sm"
                         variant="outline"
-                        className="action-hover cursor-pointer bg-white text-red-600"
+                        className="shrink-0 cursor-pointer bg-white text-red-600 hover:bg-red-50"
                         aria-label={`Void ${payment.documentNumber}`}
+                        disabled={payment.voided}
                         onClick={() => setVoiding(payment)}
                       >
                         <Ban />
@@ -286,7 +363,7 @@ export default function AdminPaymentsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+              )})
             )}
           </TableBody>
         </Table>
@@ -305,9 +382,23 @@ export default function AdminPaymentsPage() {
           if (!open) setEditing(null)
         }}
         onSavedAction={(next) => {
+          const updated: PaymentRow = {
+            ...next,
+            remarks: [
+              {
+                id: `edit-${Date.now()}`,
+                action: "edited",
+                by: actorName(user),
+                at: remarkWhen.format(new Date()),
+                detail: "Payment details were updated.",
+              },
+              ...next.remarks,
+            ],
+          }
           setPayments((current) =>
-            current.map((payment) => (payment.id === next.id ? next : payment)),
+            current.map((payment) => (payment.id === updated.id ? updated : payment)),
           )
+          setViewing((current) => (current?.id === updated.id ? updated : current))
         }}
       />
       <VoidPaymentModal
@@ -316,8 +407,25 @@ export default function AdminPaymentsPage() {
         onOpenChangeAction={(open) => {
           if (!open) setVoiding(null)
         }}
-        onVoidedAction={(payment) => {
-          setPayments((current) => current.filter((row) => row.id !== payment.id))
+        onVoidedAction={(payment, reason) => {
+          const updated: PaymentRow = {
+            ...payment,
+            voided: true,
+            remarks: [
+              {
+                id: `void-${Date.now()}`,
+                action: "voided",
+                by: actorName(user),
+                at: remarkWhen.format(new Date()),
+                detail: reason,
+              },
+              ...payment.remarks,
+            ],
+          }
+          setPayments((current) =>
+            current.map((row) => (row.id === updated.id ? updated : row)),
+          )
+          setViewing((current) => (current?.id === updated.id ? updated : current))
         }}
       />
     </section>
