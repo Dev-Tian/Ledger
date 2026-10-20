@@ -71,7 +71,7 @@ export function ViewPaymentModal({
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChangeAction}>
-      <AlertDialogContent className="w-[min(84rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!">
+      <AlertDialogContent className="w-[min(48rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!">
         <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-6 py-5 text-white">
           <AlertDialogTitle className="text-xl">
             {payment ? payment.documentNumber : "Payment"}
