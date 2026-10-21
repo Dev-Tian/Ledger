@@ -79,6 +79,12 @@ const tabs = [
 
 type AccountLedgerTab = (typeof tabs)[number]
 
+function tabLoadingVariant(tab: AccountLedgerTab): "table" | "fields" | "summary" {
+  if (tab === "Loan Ledger") return "summary"
+  if (tab === "Payment history") return "table"
+  return "fields"
+}
+
 const peso = new Intl.NumberFormat("en-PH", {
   style: "currency",
   currency: "PHP",
@@ -478,6 +484,7 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
   const params = useParams<{ internalId?: string }>()
   const routeId = typeof params.internalId === "string" ? decodeURIComponent(params.internalId) : ""
   const [tab, setTab] = useState<AccountLedgerTab>(tabs[0])
+  const [tabLoading, setTabLoading] = useState(false)
   const [query, setQuery] = useState("")
   const [resultsOpen, setResultsOpen] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
@@ -489,6 +496,18 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
   const [loading, setLoading] = useState(Boolean(routeId))
   const [error, setError] = useState("")
   const skipSearch = useRef(false)
+  const tabLoadId = useRef(0)
+
+  function selectTab(next: AccountLedgerTab) {
+    if (next === tab) return
+    const loadId = tabLoadId.current + 1
+    tabLoadId.current = loadId
+    setTab(next)
+    setTabLoading(true)
+    window.setTimeout(() => {
+      if (tabLoadId.current === loadId) setTabLoading(false)
+    }, 280)
+  }
 
   useEffect(() => {
     if (!accountKey) return
@@ -583,7 +602,7 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
                   }
                   onClick={(event) => {
                     event.preventDefault()
-                    setTab(item)
+                    selectTab(item)
                   }}
                 >
                   {item}
@@ -606,13 +625,13 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
       </div>
       <div className="relative min-h-0 w-full min-w-0 flex-1 overflow-hidden">
       <div role="tabpanel" className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden">
-        {loading ? (
+        {loading || tabLoading ? (
           tab === "Payment history" ? (
             <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
-              <LoadingState />
+              <LoadingState variant={tabLoadingVariant(tab)} />
             </div>
           ) : (
-            <LoadingState variant={tab === "Loan Ledger" ? "summary" : "fields"} />
+            <LoadingState variant={tabLoadingVariant(tab)} />
           )
         ) : error || !selected ? (
           <div className="flex min-h-80 items-center justify-center rounded-xl bg-white shadow-md ring-1 ring-blue-200">
