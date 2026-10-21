@@ -13,7 +13,7 @@ declare global {
 type ReverbEcho = Echo<"reverb">;
 
 /** Matches backend: Echo.private(`logs.${userId}`).listen('.log.created', …) */
-const LOGS_CHANNEL_PREFIX = process.env.NEXT_PUBLIC_ECHO_LOGS_CHANNEL ?? "logs";
+const LOGS_CHANNEL = process.env.NEXT_PUBLIC_ECHO_LOGS_CHANNEL ?? "logs";
 const LOG_CREATED_EVENT = ".log.created";
 
 let echo: ReverbEcho | null = null;
@@ -73,19 +73,19 @@ function eventPayload(event: unknown): unknown {
   return record.log ?? record.data ?? event;
 }
 
-/** Private channel `logs.{userId}`, event `.log.created`. */
+/** Private channel `logs.{userId}`, event `.log.created` (backend registers channel auth). */
 export async function subscribeActivityLogs(
-  userId: string | number,
+  userId: number,
   onLog: (payload: unknown) => void,
 ): Promise<() => void> {
   const client = await getEcho();
-  if (!client || userId == null || userId === "") return () => {};
+  if (!client || !Number.isFinite(userId)) return () => {};
 
-  const channelName = `${LOGS_CHANNEL_PREFIX}.${userId}`;
   const handler = (event: unknown) => {
     onLog(eventPayload(event));
   };
 
+  const channelName = `${LOGS_CHANNEL}.${userId}`;
   const channel = client.private(channelName);
   channel.listen(LOG_CREATED_EVENT, handler);
 

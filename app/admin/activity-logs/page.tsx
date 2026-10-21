@@ -296,12 +296,13 @@ export default function AdminActivityLogsPage() {
   }, [page, reloadKey, search, area])
 
   useEffect(() => {
-    if (user?.id == null) return
+    const userId = Number(user?.id)
+    if (!Number.isFinite(userId)) return
 
     let active = true
     let leave = () => {}
 
-    void subscribeActivityLogs(user.id, (payload) => {
+    void subscribeActivityLogs(userId, (payload) => {
       if (!active) return
       const mapped = mapLogItem(payload)
       if (!mapped) return
