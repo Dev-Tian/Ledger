@@ -162,6 +162,41 @@ export const apiService = {
     return response.data;
   },
 
+// ADMIN BRANCH / LOCATION API :
+  getLocations: async (page = 1, search?: string): Promise<unknown> => {
+    const params: { page: number; per_page: number; search?: string } = {
+      page,
+      per_page: 10,
+    };
+    const text = search?.trim();
+    if (text) params.search = text;
+    const response = await api.get("/locations", { params });
+    return response.data;
+  },
+
+  getLocation: async (location: string | number): Promise<unknown> => {
+    const response = await api.get(`/locations/${encodeURIComponent(String(location))}`);
+    return response.data;
+  },
+
+  addLocation: async (payload: Record<string, unknown>): Promise<unknown> => {
+    const response = await api.post("/locations", payload);
+    return response.data;
+  },
+
+  updateLocation: async (
+    location: string | number,
+    payload: Record<string, unknown>,
+  ): Promise<unknown> => {
+    const response = await api.put(`/locations/${encodeURIComponent(String(location))}`, payload);
+    return response.data;
+  },
+
+  deleteLocation: async (location: string | number): Promise<unknown> => {
+    const response = await api.delete(`/locations/${encodeURIComponent(String(location))}`);
+    return response.data;
+  },
+
 // UPLOAD API : Upload Installments
   uploadInstallments: async (rows: UploadRow[], fileName?: string): Promise<unknown> => {
     return postRows("/installments", rows, "Installments uploaded", fileName);

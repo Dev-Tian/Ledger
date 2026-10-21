@@ -247,7 +247,6 @@ export function ActivityLogsTable({
   const [reloadKey, setReloadKey] = useState(0)
   const [query, setQuery] = useState("")
   const [search, setSearch] = useState("")
-  const [area, setArea] = useState<(typeof areas)[number]>("All")
   const [page, setPage] = useState(1)
   const [lastPage, setLastPage] = useState(1)
   const [logs, setLogs] = useState<Activity[]>([])
@@ -273,10 +272,7 @@ export function ActivityLogsTable({
       setLoading(true)
       setError("")
       try {
-        const data = await apiService.getActivityLogs(page, {
-          search,
-          area: area === "All" ? "" : area,
-        })
+        const data = await apiService.getActivityLogs(page, { search })
         if (!cancelled) {
           const next = readLogsPage(data)
           setLogs(next.logs)
@@ -297,7 +293,7 @@ export function ActivityLogsTable({
     return () => {
       cancelled = true
     }
-  }, [page, reloadKey, search, area])
+  }, [page, reloadKey, search])
 
   useEffect(() => {
     const userId = Number(user?.id)
@@ -310,7 +306,6 @@ export function ActivityLogsTable({
       if (!active) return
       const mapped = mapLogItem(payload)
       if (!mapped) return
-      if (area !== "All" && mapped.area !== area) return
       if (pageRef.current !== 1) return
       setLogs((prev) => {
         if (prev.some((log) => log.id === mapped.id)) return prev
@@ -325,7 +320,7 @@ export function ActivityLogsTable({
       active = false
       leave()
     }
-  }, [user?.id, area])
+  }, [user?.id])
 
   function refresh() {
     setLoading(true)
@@ -341,25 +336,6 @@ export function ActivityLogsTable({
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-            <div className="flex rounded-xl bg-blue-50 p-1">
-              {areas.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={
-                    area === item
-                      ? "cursor-pointer rounded-lg bg-blue-800 px-3 py-1.5 text-sm font-medium text-white"
-                      : "cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-blue-800 hover:bg-white"
-                  }
-                  onClick={() => {
-                    setArea(item)
-                    setPage(1)
-                  }}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
             <div className="relative min-w-64 flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -408,8 +384,8 @@ export function ActivityLogsTable({
                   <TableEmpty
                     label={
                       error ||
-                      (search || area !== "All"
-                        ? "No activity matches that filter."
+                      (search
+                        ? "No activity matches that search."
                         : "No activity logs are listed yet.")
                     }
                   />

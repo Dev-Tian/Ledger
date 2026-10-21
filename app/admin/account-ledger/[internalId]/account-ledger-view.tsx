@@ -11,7 +11,19 @@ import { apiService, toApiErrorMessage } from "@/lib/apiService"
 import { LoadingState } from "@/components/loading-state"
 import { TableEmpty } from "@/components/table-empty"
 import { Button } from "@/components/ui/button"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
+import {
+  Menubar,
+  MenubarMenu,
+  MenubarTrigger,
+} from "@/components/ui/menubar"
 import {
   Table,
   TableBody,
@@ -20,6 +32,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+
+/** Loan ledger has many columns; treat under this content width as too narrow. */
+const COMPACT_TABLE_WIDTH = 1024
 
 const loanLedgerColumns = [
   "Installment No.",
@@ -110,24 +125,24 @@ function LoanLedgerSummary({
   customer: LedgerCustomer
 }) {
   return (
-    <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
-      <div className="bg-blue-800 px-5 py-4 text-white">
-        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-        <p className="mt-1 text-sm text-blue-100">These fields are read only.</p>
+    <div className="w-full min-w-0 overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
+      <div className="bg-blue-800 px-4 py-3 text-white sm:px-5 sm:py-4">
+        <h2 className="text-sm font-semibold tracking-tight sm:text-base">{title}</h2>
+        <p className="mt-1 text-xs text-blue-100 sm:text-sm">These fields are read only.</p>
       </div>
-      <div className="grid gap-6 px-5 py-5 lg:grid-cols-3">
+      <div className="grid gap-4 px-4 py-4 sm:gap-6 sm:px-5 sm:py-5 md:grid-cols-2 lg:grid-cols-3">
         {loanSummary(customer).map((column) => (
-          <dl key={column[0][0]} className="flex flex-col gap-3">
+          <dl key={column[0][0]} className="flex min-w-0 flex-col gap-3">
             {column.map(([label, value]) => (
-              <div key={label} className="flex flex-col gap-1">
+              <div key={label} className="flex min-w-0 flex-col gap-1">
                 <dt className="text-xs font-medium text-blue-800">{label}</dt>
-                <dd className="text-sm text-blue-950">{value || "—"}</dd>
+                <dd className="text-sm break-words text-blue-950">{value || "—"}</dd>
               </div>
             ))}
           </dl>
         ))}
       </div>
-      <div className="flex items-center justify-between gap-4 border-t bg-blue-50 px-5 py-3">
+      <div className="flex items-center justify-between gap-4 border-t bg-blue-50 px-4 py-3 sm:px-5">
         <p className="text-sm font-medium text-blue-800">Unrecovered cost</p>
         <p className="rounded-lg bg-amber-200 px-3 py-1 text-sm font-semibold tabular-nums text-blue-950">
           {peso.format(customer.unrecoveredCost)}
@@ -147,12 +162,15 @@ function RecordTable({
   empty: string
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
-      <Table containerClassName="min-h-0 flex-1 overflow-y-auto">
+    <div className="flex min-h-[18rem] w-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200 sm:min-h-[22rem]">
+      <Table containerClassName="min-h-0 max-w-full flex-1 overflow-auto">
         <TableHeader className="sticky top-0 z-10 bg-blue-50 text-blue-950">
           <TableRow>
             {columns.map((column) => (
-              <TableHead key={column} className="bg-blue-50 px-4 text-blue-950">
+              <TableHead
+                key={column}
+                className="bg-blue-50 px-3 text-xs whitespace-nowrap text-blue-950 sm:px-4 sm:text-sm"
+              >
                 {column}
               </TableHead>
             ))}
@@ -169,7 +187,10 @@ function RecordTable({
             rows.map((row, index) => (
               <TableRow key={`${row[0]}-${index}`}>
                 {row.map((cell, cellIndex) => (
-                  <TableCell key={`${columns[cellIndex]}-${index}`} className="px-4">
+                  <TableCell
+                    key={`${columns[cellIndex]}-${index}`}
+                    className="px-3 text-xs whitespace-nowrap sm:px-4 sm:text-sm"
+                  >
                     {cell || "—"}
                   </TableCell>
                 ))}
@@ -195,12 +216,78 @@ function LedgerPanel({
   rows: string[][]
   empty: string
 }) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [narrow, setNarrow] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  useEffect(() => {
+    const el = hostRef.current
+    if (!el) return
+
+    const viewportQuery = window.matchMedia("(max-width: 1023px)")
+
+    const update = () => {
+      const width = el.getBoundingClientRect().width
+      // Small app window, or content column too tight for ~17 ledger columns.
+      const compact =
+        viewportQuery.matches || (width > 0 && width < COMPACT_TABLE_WIDTH)
+      setNarrow(compact)
+      if (!compact) setDrawerOpen(false)
+    }
+
+    update()
+    viewportQuery.addEventListener("change", update)
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => {
+      viewportQuery.removeEventListener("change", update)
+      observer.disconnect()
+    }
+  }, [])
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="shrink-0">
+    <div
+      ref={hostRef}
+      className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 overflow-y-auto"
+    >
+      <div className="w-full min-w-0 shrink-0">
         <LoanLedgerSummary title={title} customer={customer} />
       </div>
-      <RecordTable columns={columns} rows={rows} empty={empty} />
+      {narrow ? (
+        <>
+          <div className="flex shrink-0 flex-col gap-3 rounded-xl bg-white px-4 py-4 shadow-md ring-1 ring-blue-200 sm:px-5">
+            <div>
+              <p className="text-sm font-medium text-blue-950">Installment table</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                This view is too narrow for all columns. Open the table to scroll them.
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              className="action-hover w-fit bg-blue-800 text-white hover:bg-blue-900"
+              onClick={() => setDrawerOpen(true)}
+            >
+              View installment table
+            </Button>
+          </div>
+          <Drawer direction="bottom" open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <DrawerContent className="flex h-[90vh] max-h-[90vh] flex-col bg-white data-[vaul-drawer-direction=bottom]:mt-8 data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
+              <DrawerHeader className="shrink-0 border-b border-blue-100 text-left">
+                <DrawerTitle className="text-blue-950">Loan ledger</DrawerTitle>
+                <DrawerDescription>
+                  Scroll sideways and up/down to review every installment column.
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 pb-6">
+                <RecordTable columns={columns} rows={rows} empty={empty} />
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </>
+      ) : (
+        <RecordTable columns={columns} rows={rows} empty={empty} />
+      )}
     </div>
   )
 }
@@ -253,22 +340,33 @@ type LedgerLine = {
 }
 
 function readAccount(payload: unknown) {
-  const account = payload && typeof payload === "object" ? (payload as { account?: Record<string, unknown> }).account : null
+  if (!payload || typeof payload !== "object") return null
+  const record = payload as {
+    installment?: Record<string, unknown>
+    account?: Record<string, unknown>
+  }
+  const account = record.installment ?? record.account
   if (!account) return null
+
+  const purchaseRaw = textOf(account.purchase_date) || textOf(account.loan_start_date)
+  const locationName = locationOf(account.location)
   const customer: LedgerCustomer = {
     internalId: textOf(account.internal_id),
     customerName: textOf(account.customer_name),
-    customerId: textOf(account.customer_id),
-    purchaseDate: formatDate(textOf(account.purchase_date)),
-    salesOrderNo: textOf(account.sales_order_no),
-    location: locationOf(account.location),
+    customerId: textOf(account.customer_id) || textOf(account.internal_id),
+    purchaseDate: formatDate(purchaseRaw),
+    salesOrderNo: textOf(account.so_number) || textOf(account.sales_order_no),
+    location: locationName,
     itemUnit: textOf(account.item),
-    loanStartDate: textOf(account.loan_start_date).slice(0, 10),
-    loanStartLabel: formatDate(textOf(account.loan_start_date)),
-    loanAmount: textOf(account.loan_amount),
-    downPayment: textOf(account.down_payment),
+    loanStartDate: purchaseRaw.slice(0, 10),
+    loanStartLabel: formatDate(purchaseRaw),
+    loanAmount:
+      textOf(account.total_accounts_receivable) ||
+      textOf(account.loan_amount) ||
+      textOf(account.financed_amount),
+    downPayment: textOf(account.downpayment) || textOf(account.down_payment),
     termMonths: textOf(account.term),
-    rebateAmount: "",
+    rebateAmount: textOf(account.rebate_amount),
     financedAmount: textOf(account.financed_amount),
     monthlyInterest: textOf(account.monthly_interest),
     monthlyInstallment: textOf(account.monthly_installment),
@@ -278,7 +376,7 @@ function readAccount(payload: unknown) {
     approver: "",
     contactNo: "",
     templateVersion: "",
-    loanStatus: textOf(account.loan_status),
+    loanStatus: textOf(account.loan_status) || "—",
     currentBalance: Number(account.current_balance) || 0,
     totalPayments: Number(account.total_payments) || 0,
     totalAmountDue: Number(account.total_amount_due) || 0,
@@ -286,13 +384,19 @@ function readAccount(payload: unknown) {
     unrecoveredCost: Number(account.unrecovered_cost) || 0,
     notes: "",
   }
-  const lines = Array.isArray(account.ledgers) ? (account.ledgers as LedgerLine[]) : []
+  const lines = Array.isArray(account.installment_ledgers)
+    ? (account.installment_ledgers as LedgerLine[])
+    : Array.isArray(account.ledgers)
+      ? (account.ledgers as LedgerLine[])
+      : []
   const monthlyInstallment = textOf(account.monthly_installment)
   const monthlyPrincipal = textOf(account.monthly_principal)
   const monthlyInterest = textOf(account.monthly_interest)
-  const rebated = account.is_rebated ? "Yes" : "No"
+  const rebated = Number(account.rebate_amount) > 0 || account.is_rebated ? "Yes" : "No"
   const ledgerRows = lines.map((line) => {
-    const paid = [line.monthly_principal_paid, line.monthly_interest_paid, line.penalty_paid].some((value) => Number(value) > 0)
+    const paid = [line.monthly_principal_paid, line.monthly_interest_paid, line.penalty_paid].some(
+      (value) => Number(value) > 0,
+    )
     const breakdown = paid
       ? `Principal ${money(line.monthly_principal_paid)} · Interest ${money(line.monthly_interest_paid)} · Penalty ${money(line.penalty_paid)}`
       : ""
@@ -326,7 +430,7 @@ function readAccount(payload: unknown) {
       money(line.monthly_installment_paid),
       money(0),
       "",
-      textOf(account.location),
+      locationName,
       "",
       "Posted",
       rebated,
@@ -461,44 +565,47 @@ export function AccountLedgerView({ searchable = false }: { searchable?: boolean
   }, [query, searchable])
 
   return (
-    <section className="-flex h-[calc(100svh-11.5rem)] min-h-0 flex-col gap-6 sm:h-[calc(100svh-12.5rem)]">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label="Account Ledger" className="flex flex-wrap gap-2">
+    <section className="flex h-[calc(100svh-11.5rem)] min-h-0 flex-col gap-4 sm:h-[calc(100svh-12.5rem)]">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+        <Menubar
+          aria-label="Account Ledger"
+          className="h-8 w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border-blue-200 bg-blue-50/70 p-[3px] shadow-none sm:w-auto"
+        >
           {tabs.map((item) => {
             const selected = tab === item
             return (
-              <Button
-                key={item}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                size="sm"
-                className={
-                  selected
-                    ? "bg-blue-800 px-3 text-white hover:bg-blue-900"
-                    : "bg-white px-3 text-blue-800 ring-1 ring-blue-200 hover:bg-blue-50"
-                }
-                onClick={() => setTab(item)}
-              >
-                {item}
-              </Button>
+              <MenubarMenu key={item}>
+                <MenubarTrigger
+                  className={
+                    selected
+                      ? "cursor-pointer rounded-md bg-blue-800 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-white hover:bg-blue-800 focus:bg-blue-800 data-open:bg-blue-800"
+                      : "cursor-pointer rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap text-blue-800 hover:bg-white focus:bg-white data-open:bg-white"
+                  }
+                  onClick={(event) => {
+                    event.preventDefault()
+                    setTab(item)
+                  }}
+                >
+                  {item}
+                </MenubarTrigger>
+              </MenubarMenu>
             )
           })}
-        </div>
+        </Menubar>
         {searchable ? (
           <div className="relative w-full max-w-sm">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search by customer name, customer ID, or sales order"
-              className="h-8 bg-white pl-9"
+              className="h-8 bg-white pl-9 text-sm"
             />
           </div>
         ) : null}
       </div>
-      <div className="relative min-h-0 flex-1">
-      <div role="tabpanel" className="flex h-full min-h-0 flex-col">
+      <div className="relative min-h-0 w-full min-w-0 flex-1 overflow-hidden">
+      <div role="tabpanel" className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden">
         {loading ? (
           tab === "Payment history" ? (
             <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">

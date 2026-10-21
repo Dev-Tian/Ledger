@@ -1,135 +1,345 @@
 "use client"
 
 import { Pencil, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 
 import { AddBranchModal } from "@/components/add-branch-modal"
 import { BranchCustomersModal } from "@/components/branch-customers-modal"
+import { LoadingState } from "@/components/loading-state"
+import { ModalError } from "@/components/modal-error"
+import { TableEmpty } from "@/components/table-empty"
+import { UpdateBranchModal } from "@/components/update-branch-modal"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import { apiService, toApiErrorMessage } from "@/lib/apiService"
 
-const branches = [
-  {
-    code: "BOHL",
-    name: "Bohol Logistics",
-    company: "Strong Moto Centrum, Inc. - SMCT",
-    customers: [
-      {
-        internalId: "ACC-1001",
-        customerName: "Maria Santos",
-        purchaseDate: "Oct 14, 2026",
-        salesOrderNo: "SO-24081",
-        location: "Cebu",
-      },
-    ],
-  },
-  {
-    code: "ALAD",
-    name: "Alano",
-    company: "Des Appliance Plaza, Inc. - DAP",
-    customers: [],
-  },
-]
+type BranchLocation = {
+  id: string | number
+  locationName: string
+}
+
+function textOf(value: unknown) {
+  return typeof value === "string" || typeof value === "number" ? String(value) : ""
+}
+
+function pageNumbers(current: number, last: number) {
+  if (last <= 7) return Array.from({ length: last }, (_, index) => index + 1)
+  const items: (number | "ellipsis")[] = [1]
+  if (current > 3) items.push("ellipsis")
+  for (let page = Math.max(2, current - 1); page <= Math.min(last - 1, current + 1); page += 1) {
+    items.push(page)
+  }
+  if (current < last - 2) items.push("ellipsis")
+  items.push(last)
+  return items
+}
+
+function readLocationsPage(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return { locations: [] as BranchLocation[], currentPage: 1, lastPage: 1 }
+  }
+  const record = payload as {
+    locations?: { data?: unknown; current_page?: number; last_page?: number } | unknown[]
+  }
+  const pager =
+    record.locations && typeof record.locations === "object" && !Array.isArray(record.locations)
+      ? record.locations
+      : null
+  const list = Array.isArray(record.locations)
+    ? record.locations
+    : Array.isArray(pager?.data)
+      ? pager.data
+      : []
+  const locations = list.flatMap((item) => {
+    if (!item || typeof item !== "object") return []
+    const row = item as Record<string, unknown>
+    const id = row.id
+    const locationName = textOf(row.location_name)
+    if (id == null || !locationName) return []
+    return [{ id: id as string | number, locationName }]
+  })
+  return {
+    locations,
+    currentPage: pager?.current_page ?? 1,
+    lastPage: pager?.last_page && pager.last_page > 0 ? pager.last_page : 1,
+  }
+}
 
 export default function AdminBranchesPage() {
-  const [items, setItems] = useState(branches)
+  const [loading, setLoading] = useState(true)
+  const [reloadKey, setReloadKey] = useState(0)
+  const [page, setPage] = useState(1)
+  const [lastPage, setLastPage] = useState(1)
+  const [items, setItems] = useState<BranchLocation[]>([])
   const [query, setQuery] = useState("")
+  const [search, setSearch] = useState("")
   const [adding, setAdding] = useState(false)
-  const [selected, setSelected] = useState<(typeof branches)[number] | null>(null)
-  const shown = useMemo(() => {
-    const text = query.trim().toLowerCase()
-    if (!text) return items
-    return items.filter((branch) =>
-      [branch.name, branch.code, branch.company].some((value) =>
-        value.toLowerCase().includes(text),
-      ),
-    )
-  }, [items, query])
+  const [editing, setEditing] = useState<BranchLocation | null>(null)
+  const [selected, setSelected] = useState<BranchLocation | null>(null)
+  const [deleting, setDeleting] = useState<BranchLocation | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
+  const [error, setError] = useState("")
 
-  function addBranch(branch: { name: string; code: string; company: string }) {
-    if (items.some((item) => item.code === branch.code)) return false
-    setItems((current) => [...current, { ...branch, customers: [] }])
-    return true
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = query.trim()
+      setSearch((current) => {
+        if (current !== next) setPage(1)
+        return next
+      })
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [query])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await apiService.getLocations(page, search)
+        if (!cancelled) {
+          const next = readLocationsPage(data)
+          setItems(next.locations)
+          setPage(next.currentPage)
+          setLastPage(next.lastPage)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setItems([])
+          setError(toApiErrorMessage(loadError, "Branches could not be loaded."))
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [page, reloadKey, search])
+
+  function refresh() {
+    setLoading(true)
+    setReloadKey((key) => key + 1)
+  }
+
+  async function addBranch(locationName: string) {
+    await apiService.addLocation({ location_name: locationName })
+    setPage(1)
+    setReloadKey((key) => key + 1)
+  }
+
+  async function updateBranch(id: string | number, locationName: string) {
+    await apiService.updateLocation(id, { location_name: locationName })
+    setReloadKey((key) => key + 1)
+  }
+
+  async function removeBranch() {
+    if (!deleting) return
+    setRemoving(true)
+    setDeleteError("")
+    try {
+      await apiService.deleteLocation(deleting.id)
+      setDeleting(null)
+      setReloadKey((key) => key + 1)
+    } catch (failure) {
+      setDeleteError(toApiErrorMessage(failure, "That branch could not be deleted."))
+    } finally {
+      setRemoving(false)
+    }
   }
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Branches</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View and manage branches information
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            className="bg-blue-800 px-3 text-white hover:bg-blue-900"
-            onClick={() => setAdding(true)}
-          >
-            <Plus />
-            Add branch
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="px-3"
-            onClick={() => setQuery("")}
-          >
-            <RefreshCw />
-            Refresh
-          </Button>
-        </div>
-      </div>
-      <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by branch, branch code, or branch name"
-          className="h-10 bg-white pl-9"
-        />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        {shown.map((branch) => (
-          <article
-            key={branch.code}
-            className="flex flex-col gap-4 rounded-xl bg-white p-5 shadow-md ring-1 ring-blue-200"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold tracking-tight text-blue-950 uppercase">
-                  {branch.name} / {branch.code}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">{branch.company}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button type="button" size="icon-sm" variant="ghost" aria-label={`Edit ${branch.name}`}>
-                  <Pencil className="text-blue-700" />
-                </Button>
-                <Button type="button" size="icon-sm" variant="ghost" aria-label={`Delete ${branch.name}`}>
-                  <Trash2 className="text-red-600" />
-                </Button>
-              </div>
+    <section className="flex h-[calc(100svh-11.5rem)] min-h-0 flex-col sm:h-[calc(100svh-12.5rem)]">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-blue-200">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b border-blue-100 px-5 py-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-blue-950">Branches</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              View and manage branch locations.
+            </p>
+          </div>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <div className="relative min-w-64 flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search by location name"
+                className="h-10 bg-blue-50/60 pl-9"
+              />
             </div>
             <Button
               type="button"
               size="sm"
-              className="bg-blue-800 text-white hover:bg-blue-900"
-              onClick={() => setSelected(branch)}
+              className="action-hover h-10 bg-blue-800 px-3 text-white hover:bg-blue-900"
+              onClick={() => setAdding(true)}
             >
-              <Users />
-              View customers
+              <Plus />
+              Add branch
             </Button>
-          </article>
-        ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="action-hover h-10 bg-blue-500 px-3 text-white"
+              disabled={loading}
+              onClick={refresh}
+            >
+              <RefreshCw />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          {loading ? (
+            <LoadingState />
+          ) : error || items.length === 0 ? (
+            <div className="flex min-h-64 items-center justify-center">
+              <TableEmpty
+                label={
+                  error ||
+                  (search ? "No branches match that search." : "No branches are listed yet.")
+                }
+              />
+            </div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {items.map((branch) => (
+                <article
+                  key={branch.id}
+                  className="flex flex-col gap-4 rounded-xl bg-blue-50/40 p-5 shadow-sm ring-1 ring-blue-200"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-sm font-semibold tracking-tight text-blue-950">
+                        {branch.locationName}
+                      </h2>
+                      <p className="mt-1 text-sm text-muted-foreground">Location #{branch.id}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label={`Edit ${branch.locationName}`}
+                        onClick={() => setEditing(branch)}
+                      >
+                        <Pencil className="text-blue-700" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label={`Delete ${branch.locationName}`}
+                        onClick={() => {
+                          setDeleteError("")
+                          setDeleting(branch)
+                        }}
+                      >
+                        <Trash2 className="text-red-600" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="action-hover bg-blue-800 text-white hover:bg-blue-900"
+                    onClick={() => setSelected(branch)}
+                  >
+                    <Users />
+                    View customers
+                  </Button>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {lastPage > 1 ? (
+          <div className="shrink-0 border-t border-blue-100 bg-blue-50/50 px-4 py-3">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    text="Previous"
+                    className={page <= 1 ? "pointer-events-none opacity-40" : "text-blue-950"}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      if (page > 1) setPage(page - 1)
+                    }}
+                  />
+                </PaginationItem>
+                {pageNumbers(page, lastPage).map((item, index) => (
+                  <PaginationItem key={item === "ellipsis" ? `ellipsis-${index}` : item}>
+                    {item === "ellipsis" ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        href="#"
+                        isActive={item === page}
+                        className={
+                          item === page
+                            ? "border-blue-800 bg-blue-800 text-white hover:bg-blue-900 hover:text-white"
+                            : "text-blue-950"
+                        }
+                        onClick={(event) => {
+                          event.preventDefault()
+                          setPage(item)
+                        }}
+                      >
+                        {item}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    text="Next"
+                    className={page >= lastPage ? "pointer-events-none opacity-40" : "text-blue-950"}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      if (page < lastPage) setPage(page + 1)
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        ) : null}
       </div>
-      <AddBranchModal
-        open={adding}
-        onOpenChangeAction={setAdding}
-        onAddAction={addBranch}
+
+      <AddBranchModal open={adding} onOpenChangeAction={setAdding} onAddAction={addBranch} />
+      <UpdateBranchModal
+        open={editing !== null}
+        onOpenChangeAction={(open) => {
+          if (!open) setEditing(null)
+        }}
+        location={editing}
+        onUpdateAction={updateBranch}
       />
       <BranchCustomersModal
         open={selected !== null}
@@ -138,9 +348,40 @@ export default function AdminBranchesPage() {
         }}
         branch={selected}
       />
-      {shown.length === 0 ? (
-        <p className="text-sm text-muted-foreground"></p>
-      ) : null}
+      <AlertDialog
+        open={deleting !== null}
+        onOpenChange={(open) => {
+          if (!open && !removing) setDeleting(null)
+        }}
+      >
+        <AlertDialogContent className="w-[min(28rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!">
+          <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-6 py-5 text-white">
+            <AlertDialogTitle className="text-xl font-semibold">Delete this branch?</AlertDialogTitle>
+            <AlertDialogDescription className="mt-1 text-blue-100">
+              {deleting
+                ? `${deleting.locationName} will be removed from the branch list.`
+                : "This branch will be removed."}
+            </AlertDialogDescription>
+          </div>
+          <div className="flex flex-col gap-4 px-6 py-5">
+            {deleteError ? (
+              <ModalError title="This branch was not deleted" message={deleteError} />
+            ) : null}
+            <div className="flex justify-end gap-2">
+              <AlertDialogCancel disabled={removing}>Cancel</AlertDialogCancel>
+              <Button
+                type="button"
+                size="sm"
+                className="bg-red-600 text-white hover:bg-red-700"
+                disabled={removing}
+                onClick={() => void removeBranch()}
+              >
+                {removing ? "Deleting…" : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   )
 }

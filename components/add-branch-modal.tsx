@@ -11,6 +11,7 @@ import {
 import { ModalError } from "@/components/modal-error"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toApiErrorMessage } from "@/lib/apiService"
 
 export function AddBranchModal({
   open,
@@ -19,41 +20,42 @@ export function AddBranchModal({
 }: {
   open: boolean
   onOpenChangeAction: (open: boolean) => void
-  onAddAction: (branch: { name: string; code: string; company: string }) => boolean
+  onAddAction: (locationName: string) => Promise<void>
 }) {
   const [name, setName] = useState("")
-  const [code, setCode] = useState("")
-  const [company, setCompany] = useState("")
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
   function reset() {
     setName("")
-    setCode("")
-    setCompany("")
+    setSaving(false)
     setError("")
   }
 
   function handleOpenChange(next: boolean) {
+    if (saving) return
     if (!next) reset()
     onOpenChangeAction(next)
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault()
-    const next = {
-      name: name.trim(),
-      code: code.trim().toUpperCase(),
-      company: company.trim(),
-    }
-    if (!next.name || !next.code || !next.company) {
-      setError("Fill in the branch name, code, and company.")
+    const locationName = name.trim()
+    if (!locationName) {
+      setError("Enter a branch / location name.")
       return
     }
-    if (!onAddAction(next)) {
-      setError("That branch code is already listed.")
-      return
+    setSaving(true)
+    setError("")
+    try {
+      await onAddAction(locationName)
+      setSaving(false)
+      reset()
+      onOpenChangeAction(false)
+    } catch (failure) {
+      setError(toApiErrorMessage(failure, "That branch could not be added."))
+      setSaving(false)
     }
-    handleOpenChange(false)
   }
 
   return (
@@ -62,32 +64,17 @@ export function AddBranchModal({
         <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-500 px-6 py-4 text-white">
           <AlertDialogTitle className="text-lg">Add branch</AlertDialogTitle>
           <AlertDialogDescription className="text-blue-100">
-            Enter the branch name, code, and company.
+            Enter the location name for this branch.
           </AlertDialogDescription>
         </div>
         <form className="flex flex-col gap-4 px-6 py-5" onSubmit={submit}>
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-semibold text-blue-950">Branch name</span>
+            <span className="text-sm font-semibold text-blue-950">Location name</span>
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="h-10 bg-white text-blue-950"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-semibold text-blue-950">Branch code</span>
-            <Input
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              className="h-10 bg-white text-blue-950 uppercase"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-semibold text-blue-950">Company</span>
-            <Input
-              value={company}
-              onChange={(event) => setCompany(event.target.value)}
-              className="h-10 bg-white text-blue-950"
+              disabled={saving}
             />
           </label>
           {error ? <ModalError title="This branch was not added" message={error} /> : null}
@@ -96,6 +83,7 @@ export function AddBranchModal({
               type="button"
               size="sm"
               variant="outline"
+              disabled={saving}
               onClick={() => handleOpenChange(false)}
             >
               Cancel
@@ -104,8 +92,9 @@ export function AddBranchModal({
               type="submit"
               size="sm"
               className="bg-blue-800 px-3 text-white hover:bg-blue-900"
+              disabled={saving}
             >
-              Add branch
+              {saving ? "Adding…" : "Add branch"}
             </Button>
           </div>
         </form>
