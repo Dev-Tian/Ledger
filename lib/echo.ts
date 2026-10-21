@@ -12,8 +12,8 @@ declare global {
 
 type ReverbEcho = Echo<"reverb">;
 
-/** Matches backend: Echo.private('logs').listen('.log.created', …) */
-const LOGS_CHANNEL = process.env.NEXT_PUBLIC_ECHO_LOGS_CHANNEL ?? "logs";
+/** Matches backend: Echo.private(`logs.${userId}`).listen('.log.created', …) */
+const LOGS_CHANNEL_PREFIX = process.env.NEXT_PUBLIC_ECHO_LOGS_CHANNEL ?? "logs";
 const LOG_CREATED_EVENT = ".log.created";
 
 let echo: ReverbEcho | null = null;
@@ -73,22 +73,24 @@ function eventPayload(event: unknown): unknown {
   return record.log ?? record.data ?? event;
 }
 
-/** Private channel `logs`, event `.log.created` (backend registers channel auth). */
+/** Private channel `logs.{userId}`, event `.log.created`. */
 export async function subscribeActivityLogs(
+  userId: string | number,
   onLog: (payload: unknown) => void,
 ): Promise<() => void> {
   const client = await getEcho();
-  if (!client) return () => {};
+  if (!client || userId == null || userId === "") return () => {};
 
+  const channelName = `${LOGS_CHANNEL_PREFIX}.${userId}`;
   const handler = (event: unknown) => {
     onLog(eventPayload(event));
   };
 
-  const channel = client.private(LOGS_CHANNEL);
+  const channel = client.private(channelName);
   channel.listen(LOG_CREATED_EVENT, handler);
 
   return () => {
     channel.stopListening(LOG_CREATED_EVENT, handler);
-    client.leave(LOGS_CHANNEL);
+    client.leave(channelName);
   };
 }

@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useUser } from "@/contexts/UserContext"
 import { apiService, toApiErrorMessage } from "@/lib/apiService"
 import { subscribeActivityLogs } from "@/lib/echo"
 
@@ -184,6 +185,7 @@ function rowClass(index: number) {
 }
 
 export default function AdminActivityLogsPage() {
+  const { user } = useUser()
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
   const [query, setQuery] = useState("")
@@ -233,10 +235,12 @@ export default function AdminActivityLogsPage() {
   }, [reloadKey, search, area])
 
   useEffect(() => {
+    if (user?.id == null) return
+
     let active = true
     let leave = () => {}
 
-    void subscribeActivityLogs((payload) => {
+    void subscribeActivityLogs(user.id, (payload) => {
       if (!active) return
       const mapped = mapLogItem(payload)
       if (!mapped) return
@@ -253,7 +257,7 @@ export default function AdminActivityLogsPage() {
       active = false
       leave()
     }
-  }, [])
+  }, [user?.id])
 
   function refresh() {
     setLoading(true)
