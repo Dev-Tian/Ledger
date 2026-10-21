@@ -173,13 +173,13 @@ function actionClass(action: ActivityAction) {
   if (action === "Deleted") return "bg-red-50 text-red-700 ring-red-200"
   if (action === "Uploaded") return "bg-sky-50 text-sky-800 ring-sky-200"
   if (action === "Added") return "bg-emerald-50 text-emerald-800 ring-emerald-200"
-  return "bg-yellow-100 text-yellow-900 ring-yellow-300"
+  return "bg-blue-50 text-blue-800 ring-blue-200"
 }
 
-/** Newest row: blue. Update rows: yellow. Older non-updates: white. */
-function rowClass(log: Activity, index: number) {
+/** Newest: blue. Previous recent (right under it): yellow. Older: white. */
+function rowClass(index: number) {
   if (index === 0) return "bg-blue-200 hover:bg-blue-300/80"
-  if (log.action === "Updated") return "bg-yellow-200 hover:bg-yellow-300/90"
+  if (index === 1) return "bg-yellow-100/90 hover:bg-yellow-200/90"
   return "bg-white hover:bg-blue-50/70"
 }
 
@@ -344,7 +344,7 @@ export default function AdminActivityLogsPage() {
               </TableRow>
             ) : (
               shown.map((log, index) => (
-                <TableRow key={log.id} className={rowClass(log, index)}>
+                <TableRow key={log.id} className={rowClass(index)}>
                   <TableCell className="px-5 py-3 whitespace-nowrap text-blue-950/80">
                     {log.when}
                   </TableCell>
