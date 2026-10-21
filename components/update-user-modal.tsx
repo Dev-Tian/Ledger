@@ -3,9 +3,10 @@
 import { useEffect, useState, type FormEvent } from "react"
 
 import { BranchCodeCombobox } from "@/components/branch-code-combobox"
-import { RoleCombobox } from "@/components/role-combobox"
-import { ModalError } from "@/components/modal-error"
 import { LoadingState } from "@/components/loading-state"
+import { ModalError } from "@/components/modal-error"
+import { ModalLogoWatermark } from "@/components/modal-logo-watermark"
+import { RoleCombobox } from "@/components/role-combobox"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -135,84 +136,87 @@ export function UpdateUserModal({
             {email.trim() || "Update this user’s account details."}
           </AlertDialogDescription>
         </div>
-        {loading ? (
-          <div className="bg-white">
-            <LoadingState />
-          </div>
-        ) : (
-          <form onSubmit={(event) => void submit(event)}>
-            <div className="grid gap-x-6 gap-y-4 px-8 py-6 sm:grid-cols-2">
-              <label className="flex flex-col gap-1.5 sm:col-span-2">
-                <span className="text-sm font-semibold text-blue-950">Name</span>
-                <Input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  className="h-11 bg-white text-base text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Email</span>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="h-11 bg-white text-base text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Code</span>
-                <Input
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  className="h-11 bg-white text-base text-blue-950"
-                />
-              </label>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Branch code</span>
-                <BranchCodeCombobox
-                  branches={branches}
-                  value={branchCode}
-                  onValueChange={setBranchCode}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Role</span>
-                <RoleCombobox value={role} onValueChange={setRole} />
-              </div>
+        <div className="relative">
+          <ModalLogoWatermark />
+          {loading ? (
+            <div className="relative z-10 bg-white/80">
+              <LoadingState />
             </div>
-            {error ? (
-              <div className="px-8 pb-4">
-                <ModalError
-                  title={
-                    error.includes("loaded")
-                      ? "This user could not be opened"
-                      : "This user was not saved"
-                  }
-                  message={error}
-                />
+          ) : (
+            <form className="relative z-10" onSubmit={(event) => void submit(event)}>
+              <div className="grid gap-x-6 gap-y-4 px-8 py-6 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5 sm:col-span-2">
+                  <span className="text-sm font-semibold text-blue-950">Name</span>
+                  <Input
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    className="h-11 bg-white text-base text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Email</span>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="h-11 bg-white text-base text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Code</span>
+                  <Input
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                    className="h-11 bg-white text-base text-blue-950"
+                  />
+                </label>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Branch code</span>
+                  <BranchCodeCombobox
+                    branches={branches}
+                    value={branchCode}
+                    onValueChange={setBranchCode}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Role</span>
+                  <RoleCombobox value={role} onValueChange={setRole} />
+                </div>
               </div>
-            ) : null}
-            <div className="flex justify-end gap-2 border-t bg-blue-50 px-8 py-4">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="bg-white px-4"
-                onClick={() => onOpenChangeAction(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                className="bg-blue-800 px-4 text-white hover:bg-blue-900"
-                disabled={saving || user?.id == null}
-              >
-                {saving ? "Saving" : "Save"}
-              </Button>
-            </div>
-          </form>
-        )}
+              {error ? (
+                <div className="px-8 pb-4">
+                  <ModalError
+                    title={
+                      error.includes("loaded")
+                        ? "This user could not be opened"
+                        : "This user was not saved"
+                    }
+                    message={error}
+                  />
+                </div>
+              ) : null}
+              <div className="flex justify-end gap-2 border-t bg-blue-50/80 px-8 py-4">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="bg-white px-4"
+                  onClick={() => onOpenChangeAction(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-blue-800 px-4 text-white hover:bg-blue-900"
+                  disabled={saving || user?.id == null}
+                >
+                  {saving ? "Saving" : "Save"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   )

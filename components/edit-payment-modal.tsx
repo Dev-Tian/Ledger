@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react"
 
 import { LoadingState } from "@/components/loading-state"
 import { ModalError } from "@/components/modal-error"
+import { ModalLogoWatermark } from "@/components/modal-logo-watermark"
 import type { ViewPayment } from "@/components/view-payment-modal"
 import {
   AlertDialog,
@@ -157,130 +158,133 @@ export function EditPaymentModal({
             Update this payment record.
           </AlertDialogDescription>
         </div>
-        {loading ? (
-          <div className="bg-white">
-            <LoadingState />
-          </div>
-        ) : (
-          <form onSubmit={submit}>
-            <div className="grid max-h-[min(36rem,60svh)] gap-x-4 gap-y-3 overflow-y-auto px-6 py-5 sm:grid-cols-2">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Document number</span>
-                <Input
-                  value={documentNumber}
-                  onChange={(event) => setDocumentNumber(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Date</span>
-                <Input
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 sm:col-span-2">
-                <span className="text-sm font-semibold text-blue-950">Name</span>
-                <Input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">OR number</span>
-                <Input
-                  value={orNumber}
-                  onChange={(event) => setOrNumber(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Maximum of amount</span>
-                <Input
-                  inputMode="decimal"
-                  value={maximumOfAmount}
-                  onChange={(event) => setMaximumOfAmount(event.target.value)}
-                  className="h-10 bg-white text-blue-950 tabular-nums"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 sm:col-span-2">
-                <span className="text-sm font-semibold text-blue-950">Memo (main)</span>
-                <Input
-                  value={memoMain}
-                  onChange={(event) => setMemoMain(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">
-                  Minimum of sales order number
-                </span>
-                <Input
-                  value={minimumSalesOrderNumber}
-                  onChange={(event) => setMinimumSalesOrderNumber(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">
-                  Minimum of invoice number - leasing
-                </span>
-                <Input
-                  value={minimumInvoiceNumberLeasing}
-                  onChange={(event) => setMinimumInvoiceNumberLeasing(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Eligible for rebate</span>
-                <YesNoDropdown value={eligibleForRebate} onValueChange={setEligibleForRebate} />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-blue-950">Generic collector</span>
-                <Input
-                  value={genericCollector}
-                  onChange={(event) => setGenericCollector(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 sm:col-span-2">
-                <span className="text-sm font-semibold text-blue-950">Location</span>
-                <Input
-                  value={location}
-                  onChange={(event) => setLocation(event.target.value)}
-                  className="h-10 bg-white text-blue-950"
-                />
-              </label>
-              {error ? (
-                <div className="sm:col-span-2">
-                  <ModalError title="This payment was not saved" message={error} />
+        <div className="relative">
+          <ModalLogoWatermark />
+          {loading ? (
+            <div className="relative z-10 bg-white/80">
+              <LoadingState />
+            </div>
+          ) : (
+            <form className="relative z-10" onSubmit={submit}>
+              <div className="grid max-h-[min(36rem,60svh)] min-h-0 gap-x-4 gap-y-3 overflow-y-auto px-6 py-5 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Document number</span>
+                  <Input
+                    value={documentNumber}
+                    onChange={(event) => setDocumentNumber(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Date</span>
+                  <Input
+                    value={date}
+                    onChange={(event) => setDate(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5 sm:col-span-2">
+                  <span className="text-sm font-semibold text-blue-950">Name</span>
+                  <Input
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">OR number</span>
+                  <Input
+                    value={orNumber}
+                    onChange={(event) => setOrNumber(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Maximum of amount</span>
+                  <Input
+                    inputMode="decimal"
+                    value={maximumOfAmount}
+                    onChange={(event) => setMaximumOfAmount(event.target.value)}
+                    className="h-10 bg-white text-blue-950 tabular-nums"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5 sm:col-span-2">
+                  <span className="text-sm font-semibold text-blue-950">Memo (main)</span>
+                  <Input
+                    value={memoMain}
+                    onChange={(event) => setMemoMain(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">
+                    Minimum of sales order number
+                  </span>
+                  <Input
+                    value={minimumSalesOrderNumber}
+                    onChange={(event) => setMinimumSalesOrderNumber(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">
+                    Minimum of invoice number - leasing
+                  </span>
+                  <Input
+                    value={minimumInvoiceNumberLeasing}
+                    onChange={(event) => setMinimumInvoiceNumberLeasing(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Eligible for rebate</span>
+                  <YesNoDropdown value={eligibleForRebate} onValueChange={setEligibleForRebate} />
                 </div>
-              ) : null}
-            </div>
-            <div className="flex justify-end gap-2 border-t border-blue-100 bg-blue-50/50 px-6 py-4">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="cursor-pointer bg-white px-4 text-blue-950"
-                disabled={saving}
-                onClick={() => onOpenChangeAction(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                className="cursor-pointer bg-blue-800 px-3 text-white hover:bg-blue-900"
-                disabled={saving || !payment}
-              >
-                {saving ? "Saving" : "Save"}
-              </Button>
-            </div>
-          </form>
-        )}
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-blue-950">Generic collector</span>
+                  <Input
+                    value={genericCollector}
+                    onChange={(event) => setGenericCollector(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5 sm:col-span-2">
+                  <span className="text-sm font-semibold text-blue-950">Location</span>
+                  <Input
+                    value={location}
+                    onChange={(event) => setLocation(event.target.value)}
+                    className="h-10 bg-white text-blue-950"
+                  />
+                </label>
+                {error ? (
+                  <div className="sm:col-span-2">
+                    <ModalError title="This payment was not saved" message={error} />
+                  </div>
+                ) : null}
+              </div>
+              <div className="flex justify-end gap-2 border-t border-blue-100 bg-blue-50/80 px-6 py-4">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer bg-white px-4 text-blue-950"
+                  disabled={saving}
+                  onClick={() => onOpenChangeAction(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="cursor-pointer bg-blue-800 px-3 text-white hover:bg-blue-900"
+                  disabled={saving || !payment}
+                >
+                  {saving ? "Saving" : "Save"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   )

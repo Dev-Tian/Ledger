@@ -27,6 +27,7 @@ type ActivityAction = "Updated" | "Uploaded" | "Added" | "Deleted"
 type Activity = {
   id: string
   when: string
+  whenAt: number
   user: string
   action: ActivityAction
   area: Exclude<(typeof areas)[number], "All"> | "Other"
@@ -52,12 +53,43 @@ function formatWhen(value: string) {
   return whenFormat.format(date)
 }
 
+function whenAtOf(value: string) {
+  if (!value) return 0
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+}
+
+function newestFirst(list: Activity[]) {
+  return [...list].sort((a, b) => {
+    if (b.whenAt !== a.whenAt) return b.whenAt - a.whenAt
+    return String(b.id).localeCompare(String(a.id), undefined, { numeric: true })
+  })
+}
+
 function inferAction(detail: string): ActivityAction {
   const text = detail.toLowerCase()
   if (text.includes("upload")) return "Uploaded"
   if (text.includes("delet") || text.includes("removed")) return "Deleted"
+  if (/\b(update|updated|edit|edited|changed|change)\b/.test(text)) return "Updated"
   if (text.includes("add") || text.includes("created")) return "Added"
   return "Updated"
+}
+
+function normalizeAction(raw: unknown, detail: string): ActivityAction {
+  const value = textOf(raw).trim().toLowerCase()
+  if (value === "uploaded" || value === "upload") return "Uploaded"
+  if (value === "deleted" || value === "delete" || value === "removed") return "Deleted"
+  if (value === "added" || value === "add" || value === "created" || value === "create") return "Added"
+  if (
+    value === "updated" ||
+    value === "update" ||
+    value === "edited" ||
+    value === "edit" ||
+    value === "changed"
+  ) {
+    return "Updated"
+  }
+  return inferAction(detail)
 }
 
 function inferArea(detail: string, action: ActivityAction): Activity["area"] {
@@ -84,13 +116,7 @@ function mapLogItem(item: unknown): Activity | null {
   const id = textOf(row.id)
   const detail = textOf(row.info) || textOf(row.detail) || textOf(row.message)
   if (!id && !detail) return null
-  const action =
-    row.action === "Updated" ||
-    row.action === "Uploaded" ||
-    row.action === "Added" ||
-    row.action === "Deleted"
-      ? row.action
-      : inferAction(detail)
+  const action = normalizeAction(row.action, detail)
   const areaValue = textOf(row.area)
   const area =
     areaValue === "Users" || areaValue === "Uploads" || areaValue === "Accounts"
@@ -101,9 +127,11 @@ function mapLogItem(item: unknown): Activity | null {
     textOf(row.user_name) ||
     textOf((row.user as { name?: unknown } | undefined)?.name) ||
     inferUser(detail, "")
+  const whenRaw = textOf(row.created_at) || textOf(row.when)
   return {
     id: id || detail,
-    when: formatWhen(textOf(row.created_at) || textOf(row.when)),
+    when: formatWhen(whenRaw),
+    whenAt: whenAtOf(whenRaw),
     user,
     action,
     area,
@@ -127,10 +155,12 @@ function readLogs(payload: unknown): Activity[] {
           ? record.data
           : []
 
-  return list.flatMap((item) => {
-    const mapped = mapLogItem(item)
-    return mapped ? [mapped] : []
-  })
+  return newestFirst(
+    list.flatMap((item) => {
+      const mapped = mapLogItem(item)
+      return mapped ? [mapped] : []
+    }),
+  )
 }
 
 function initials(name: string) {
@@ -143,7 +173,14 @@ function actionClass(action: ActivityAction) {
   if (action === "Deleted") return "bg-red-50 text-red-700 ring-red-200"
   if (action === "Uploaded") return "bg-sky-50 text-sky-800 ring-sky-200"
   if (action === "Added") return "bg-emerald-50 text-emerald-800 ring-emerald-200"
-  return "bg-blue-50 text-blue-800 ring-blue-200"
+  return "bg-yellow-100 text-yellow-900 ring-yellow-300"
+}
+
+/** Newest row: blue. Update rows: yellow. Older non-updates: white. */
+function rowClass(log: Activity, index: number) {
+  if (index === 0) return "bg-blue-200 hover:bg-blue-300/80"
+  if (log.action === "Updated") return "bg-yellow-200 hover:bg-yellow-300/90"
+  return "bg-white hover:bg-blue-50/70"
 }
 
 export default function AdminActivityLogsPage() {
@@ -205,7 +242,7 @@ export default function AdminActivityLogsPage() {
       if (!mapped) return
       setLogs((prev) => {
         if (prev.some((log) => log.id === mapped.id)) return prev
-        return [mapped, ...prev]
+        return newestFirst([mapped, ...prev])
       })
     }).then((unsubscribe) => {
       if (!active) unsubscribe()
@@ -306,8 +343,8 @@ export default function AdminActivityLogsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              shown.map((log) => (
-                <TableRow key={log.id} className="hover:bg-blue-50/70">
+              shown.map((log, index) => (
+                <TableRow key={log.id} className={rowClass(log, index)}>
                   <TableCell className="px-5 py-3 whitespace-nowrap text-blue-950/80">
                     {log.when}
                   </TableCell>

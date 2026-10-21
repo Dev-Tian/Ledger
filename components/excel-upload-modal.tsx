@@ -58,13 +58,11 @@ export function ExcelUploadModal({
   open,
   onOpenChangeAction,
   title,
-  columns,
   onUpload,
 }: {
   open: boolean
   onOpenChangeAction: (open: boolean) => void
   title: string
-  columns?: string[]
   onUpload?: (rows: UploadRow[]) => Promise<void>
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -200,11 +198,6 @@ export function ExcelUploadModal({
               {file ? file.name : "Choose an Excel file"}
             </span>
             <span className="text-xs text-muted-foreground">.xls or .xlsx</span>
-            {columns ? (
-              <span className="text-xs leading-5 text-blue-950">
-                {columns.join(" · ")}
-              </span>
-            ) : null}
             <input
               ref={inputRef}
               type="file"

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react"
 
 import { LoadingState } from "@/components/loading-state"
 import { ModalError } from "@/components/modal-error"
+import { ModalLogoWatermark } from "@/components/modal-logo-watermark"
 import type { ViewPayment } from "@/components/view-payment-modal"
 import {
   AlertDialog,
@@ -75,69 +76,72 @@ export function VoidPaymentModal({
             This collection will be marked void. Give a reason before continuing.
           </AlertDialogDescription>
         </div>
-        {loading ? (
-          <div className="bg-white">
-            <LoadingState />
-          </div>
-        ) : (
-          <form onSubmit={submit}>
-            {payment ? (
-              <div className="px-6 py-5">
-                <p className="text-lg font-semibold text-blue-950">{payment.documentNumber}</p>
-                <dl className="mt-4 grid gap-3 text-sm">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-muted-foreground">Name</dt>
-                    <dd className="font-medium text-blue-950">{payment.name || "—"}</dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-muted-foreground">OR number</dt>
-                    <dd className="font-medium text-blue-950">{payment.orNumber || "—"}</dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-muted-foreground">Amount</dt>
-                    <dd className="font-medium tabular-nums text-blue-950">
-                      {peso.format(payment.maximumOfAmount)}
-                    </dd>
-                  </div>
-                </dl>
-                <label className="mt-5 flex flex-col gap-1.5">
-                  <span className="text-sm font-semibold text-blue-950">Reason</span>
-                  <Textarea
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    placeholder="Why is this payment being voided?"
-                    className="min-h-24 bg-white text-blue-950"
-                  />
-                </label>
-                {error ? (
-                  <div className="mt-4">
-                    <ModalError title="This payment was not voided" message={error} />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-            <div className="flex justify-end gap-2 border-t border-blue-100 bg-blue-50 px-6 py-4">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="cursor-pointer bg-white px-4 text-blue-950"
-                disabled={voiding}
-                onClick={() => onOpenChangeAction(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                className="cursor-pointer bg-red-600 px-4 text-white hover:bg-red-700"
-                disabled={voiding || !payment}
-              >
-                {voiding ? "Voiding" : "Void payment"}
-              </Button>
+        <div className="relative">
+          <ModalLogoWatermark />
+          {loading ? (
+            <div className="relative z-10 bg-white/80">
+              <LoadingState />
             </div>
-          </form>
-        )}
+          ) : (
+            <form className="relative z-10" onSubmit={submit}>
+              {payment ? (
+                <div className="px-6 py-5">
+                  <p className="text-lg font-semibold text-blue-950">{payment.documentNumber}</p>
+                  <dl className="mt-4 grid gap-3 text-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-muted-foreground">Name</dt>
+                      <dd className="font-medium text-blue-950">{payment.name || "—"}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-muted-foreground">OR number</dt>
+                      <dd className="font-medium text-blue-950">{payment.orNumber || "—"}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-muted-foreground">Amount</dt>
+                      <dd className="font-medium tabular-nums text-blue-950">
+                        {peso.format(payment.maximumOfAmount)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <label className="mt-5 flex flex-col gap-1.5">
+                    <span className="text-sm font-semibold text-blue-950">Reason</span>
+                    <Textarea
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                      placeholder="Why is this payment being voided?"
+                      className="min-h-24 bg-white text-blue-950"
+                    />
+                  </label>
+                  {error ? (
+                    <div className="mt-4">
+                      <ModalError title="This payment was not voided" message={error} />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className="flex justify-end gap-2 border-t border-blue-100 bg-blue-50/80 px-6 py-4">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer bg-white px-4 text-blue-950"
+                  disabled={voiding}
+                  onClick={() => onOpenChangeAction(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="cursor-pointer bg-red-600 px-4 text-white hover:bg-red-700"
+                  disabled={voiding || !payment}
+                >
+                  {voiding ? "Voiding" : "Void payment"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   )

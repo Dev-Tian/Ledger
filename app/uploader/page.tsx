@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { apiService } from "@/lib/apiService"
 
 const statuses: { label: string; value: number; icon: LucideIcon }[] = [
   { label: "Total Accounts", value: 1, icon: BookOpen },
@@ -118,6 +119,13 @@ export default function UploaderDashboardPage() {
           if (!open) setUploadTitle(null)
         }}
         title={uploadTitle ?? "Payment"}
+        onUpload={
+          uploadTitle === "Installment"
+            ? (rows) => apiService.uploadInstallments(rows).then(() => undefined)
+            : uploadTitle === "Payment"
+              ? (rows) => apiService.uploadPayments(rows).then(() => undefined)
+              : undefined
+        }
       />
     </section>
   )
