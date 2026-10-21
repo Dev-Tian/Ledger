@@ -1,12 +1,21 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { RefreshCw, Search } from "lucide-react"
 
 import { LoadingState } from "@/components/loading-state"
 import { TableEmpty } from "@/components/table-empty"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import {
   Table,
   TableBody,
@@ -22,6 +31,8 @@ import { subscribeActivityLogs } from "@/lib/echo"
 const columns = ["When", "User", "Action", "Area", "Detail"]
 
 const areas = ["All", "Users", "Uploads", "Accounts"] as const
+
+const pageSize = 10
 
 type ActivityAction = "Updated" | "Uploaded" | "Added" | "Deleted"
 
@@ -105,10 +116,18 @@ function inferArea(detail: string, action: ActivityAction): Activity["area"] {
   return "Other"
 }
 
+/** Backend puts the actor in `info` (e.g. "Uploader: Jane Doe"), not a `user` field. */
 function inferUser(detail: string, fallback: string) {
   if (fallback) return fallback
-  const match = detail.match(/^(.+?)\s+(uploaded|added|updated|deleted|removed)/i)
-  return match?.[1]?.trim() || "—"
+  const labeled = detail.match(
+    /(?:^|\n)\s*(?:uploader|user|by|actor|performed by)\s*:\s*(.+?)(?:\n|$)/i,
+  )
+  if (labeled?.[1]?.trim()) return labeled[1].trim()
+  const leading = detail.match(/^(.+?)\s+(uploaded|added|updated|deleted|removed)\b/i)
+  const candidate = leading?.[1]?.trim() ?? ""
+  // Avoid treating "File uploaded…" as user "File"
+  if (candidate && !/^(file|batch|upload|error|row)$/i.test(candidate)) return candidate
+  return "—"
 }
 
 function mapLogItem(item: unknown): Activity | null {
@@ -123,10 +142,15 @@ function mapLogItem(item: unknown): Activity | null {
     areaValue === "Users" || areaValue === "Uploads" || areaValue === "Accounts"
       ? areaValue
       : inferArea(detail, action)
+  const nestedUser =
+    row.user && typeof row.user === "object" ? (row.user as { name?: unknown; fname?: unknown; lname?: unknown }) : null
+  const nestedName =
+    textOf(nestedUser?.name) ||
+    [textOf(nestedUser?.fname), textOf(nestedUser?.lname)].filter(Boolean).join(" ")
   const user =
-    textOf(row.user) ||
+    (typeof row.user === "string" || typeof row.user === "number" ? textOf(row.user) : "") ||
     textOf(row.user_name) ||
-    textOf((row.user as { name?: unknown } | undefined)?.name) ||
+    nestedName ||
     inferUser(detail, "")
   const whenRaw = textOf(row.created_at) || textOf(row.when)
   return {
@@ -140,7 +164,7 @@ function mapLogItem(item: unknown): Activity | null {
   }
 }
 
-function readLogs(payload: unknown): Activity[] {
+function listedLogs(payload: unknown): Activity[] {
   if (!payload || typeof payload !== "object") return []
   const record = payload as {
     logs?: { data?: unknown } | unknown[]
@@ -162,6 +186,35 @@ function readLogs(payload: unknown): Activity[] {
       return mapped ? [mapped] : []
     }),
   )
+}
+
+function readLogsPage(payload: unknown) {
+  const logs = listedLogs(payload)
+  const record =
+    payload && typeof payload === "object"
+      ? (payload as { logs?: { current_page?: number; last_page?: number } })
+      : null
+  const pager = record?.logs && typeof record.logs === "object" ? record.logs : null
+  const currentPage = pager?.current_page ?? 1
+  const lastPage =
+    pager?.last_page && pager.last_page > 0
+      ? pager.last_page
+      : Math.max(1, Math.ceil(logs.length / pageSize))
+  const pageLogs =
+    logs.length > pageSize ? logs.slice((currentPage - 1) * pageSize, currentPage * pageSize) : logs
+  return { logs: pageLogs, currentPage, lastPage }
+}
+
+function pageNumbers(current: number, last: number) {
+  if (last <= 7) return Array.from({ length: last }, (_, index) => index + 1)
+  const items: (number | "ellipsis")[] = [1]
+  if (current > 3) items.push("ellipsis")
+  for (let page = Math.max(2, current - 1); page <= Math.min(last - 1, current + 1); page += 1) {
+    items.push(page)
+  }
+  if (current < last - 2) items.push("ellipsis")
+  items.push(last)
+  return items
 }
 
 function initials(name: string) {
@@ -191,17 +244,20 @@ export default function AdminActivityLogsPage() {
   const [query, setQuery] = useState("")
   const [search, setSearch] = useState("")
   const [area, setArea] = useState<(typeof areas)[number]>("All")
+  const [page, setPage] = useState(1)
+  const [lastPage, setLastPage] = useState(1)
   const [logs, setLogs] = useState<Activity[]>([])
   const [error, setError] = useState("")
-
-  const shown = useMemo(() => {
-    if (area === "All") return logs
-    return logs.filter((log) => log.area === area)
-  }, [logs, area])
+  const pageRef = useRef(page)
+  pageRef.current = page
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setSearch(query.trim())
+      const next = query.trim()
+      setSearch((current) => {
+        if (current !== next) setPage(1)
+        return next
+      })
     }, 300)
     return () => window.clearTimeout(timer)
   }, [query])
@@ -213,11 +269,16 @@ export default function AdminActivityLogsPage() {
       setLoading(true)
       setError("")
       try {
-        const data = await apiService.getActivityLogs(1, {
+        const data = await apiService.getActivityLogs(page, {
           search,
           area: area === "All" ? "" : area,
         })
-        if (!cancelled) setLogs(readLogs(data))
+        if (!cancelled) {
+          const next = readLogsPage(data)
+          setLogs(next.logs)
+          setPage(next.currentPage)
+          setLastPage(next.lastPage)
+        }
       } catch (loadError) {
         if (!cancelled) {
           setLogs([])
@@ -232,7 +293,7 @@ export default function AdminActivityLogsPage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey, search, area])
+  }, [page, reloadKey, search, area])
 
   useEffect(() => {
     if (user?.id == null) return
@@ -244,9 +305,11 @@ export default function AdminActivityLogsPage() {
       if (!active) return
       const mapped = mapLogItem(payload)
       if (!mapped) return
+      if (area !== "All" && mapped.area !== area) return
+      if (pageRef.current !== 1) return
       setLogs((prev) => {
         if (prev.some((log) => log.id === mapped.id)) return prev
-        return newestFirst([mapped, ...prev])
+        return newestFirst([mapped, ...prev]).slice(0, pageSize)
       })
     }).then((unsubscribe) => {
       if (!active) unsubscribe()
@@ -257,7 +320,7 @@ export default function AdminActivityLogsPage() {
       active = false
       leave()
     }
-  }, [user?.id])
+  }, [user?.id, area])
 
   function refresh() {
     setLoading(true)
@@ -285,7 +348,10 @@ export default function AdminActivityLogsPage() {
                       ? "cursor-pointer rounded-lg bg-blue-800 px-3 py-1.5 text-sm font-medium text-white"
                       : "cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-blue-800 hover:bg-white"
                   }
-                  onClick={() => setArea(item)}
+                  onClick={() => {
+                    setArea(item)
+                    setPage(1)
+                  }}
                 >
                   {item}
                 </button>
@@ -333,7 +399,7 @@ export default function AdminActivityLogsPage() {
                   <LoadingState />
                 </TableCell>
               </TableRow>
-            ) : error || shown.length === 0 ? (
+            ) : error || logs.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={columns.length} className="px-5 py-6 text-center">
                   <TableEmpty
@@ -347,7 +413,7 @@ export default function AdminActivityLogsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              shown.map((log, index) => (
+              logs.map((log, index) => (
                 <TableRow key={log.id} className={rowClass(index)}>
                   <TableCell className="px-5 py-3 whitespace-nowrap text-blue-950/80">
                     {log.when}
@@ -378,6 +444,59 @@ export default function AdminActivityLogsPage() {
             )}
           </TableBody>
         </Table>
+        {lastPage > 1 ? (
+          <div className="shrink-0 border-t border-blue-100 bg-blue-50/50 px-4 py-3">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    text="Previous"
+                    className={page <= 1 ? "pointer-events-none opacity-40" : "text-blue-950"}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      if (page > 1) setPage(page - 1)
+                    }}
+                  />
+                </PaginationItem>
+                {pageNumbers(page, lastPage).map((item, index) => (
+                  <PaginationItem key={item === "ellipsis" ? `ellipsis-${index}` : item}>
+                    {item === "ellipsis" ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        href="#"
+                        isActive={item === page}
+                        className={
+                          item === page
+                            ? "border-blue-800 bg-blue-800 text-white hover:bg-blue-900 hover:text-white"
+                            : "text-blue-950"
+                        }
+                        onClick={(event) => {
+                          event.preventDefault()
+                          setPage(item)
+                        }}
+                      >
+                        {item}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    text="Next"
+                    className={page >= lastPage ? "pointer-events-none opacity-40" : "text-blue-950"}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      if (page < lastPage) setPage(page + 1)
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        ) : null}
       </div>
     </section>
   )

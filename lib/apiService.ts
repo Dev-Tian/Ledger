@@ -144,7 +144,7 @@ export const apiService = {
   ): Promise<unknown> => {
     const params: { page: number; per_page: number; search?: string; area?: string } = {
       page,
-      per_page: 20,
+      per_page: 10,
     };
     const search = filters?.search?.trim();
     const area = filters?.area?.trim();
