@@ -63,7 +63,7 @@ export function ExcelUploadModal({
   open: boolean
   onOpenChangeAction: (open: boolean) => void
   title: string
-  onUpload?: (rows: UploadRow[]) => Promise<void>
+  onUpload?: (rows: UploadRow[], fileName: string) => Promise<void>
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const progressTimer = useRef<number | null>(null)
@@ -110,7 +110,7 @@ export function ExcelUploadModal({
       })
     }, 160)
     void uploadRows(file, title)
-      .then((rows) => onUpload(rows))
+      .then((rows) => onUpload(rows, file.name))
       .then(() => {
         if (uploadId.current !== currentUpload) return
         stopProgress()

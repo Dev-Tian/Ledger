@@ -121,9 +121,11 @@ export default function AdminDashboardPage() {
         title={uploadTitle ?? "Payment"}
         onUpload={
           uploadTitle === "Installment"
-            ? (rows) => apiService.uploadInstallments(rows).then(() => undefined)
+            ? (rows, fileName) =>
+                apiService.uploadInstallments(rows, fileName).then(() => undefined)
             : uploadTitle === "Payment"
-              ? (rows) => apiService.uploadPayments(rows).then(() => undefined)
+              ? (rows, fileName) =>
+                  apiService.uploadPayments(rows, fileName).then(() => undefined)
               : undefined
         }
       />

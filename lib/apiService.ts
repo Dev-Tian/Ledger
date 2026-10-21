@@ -52,12 +52,20 @@ function compactRows(rows: UploadRow[]): UploadRow[] {
   });
 }
 
-async function postRows(path: string, rows: UploadRow[], message: string): Promise<unknown> {
-  const response = await api.post(
-    path,
-    { rows: compactRows(rows) },
-    { headers: { "Content-Type": "application/json" } },
-  );
+async function postRows(
+  path: string,
+  rows: UploadRow[],
+  message: string,
+  fileName?: string,
+): Promise<unknown> {
+  const body: { rows: UploadRow[]; file_name?: string } = {
+    rows: compactRows(rows),
+  };
+  const name = fileName?.trim();
+  if (name) body.file_name = name;
+  const response = await api.post(path, body, {
+    headers: { "Content-Type": "application/json" },
+  });
   const count = response.data?.inserted;
   return {
     message,
@@ -155,12 +163,12 @@ export const apiService = {
   },
 
 // UPLOAD API : Upload Installments
-  uploadInstallments: async (rows: UploadRow[]): Promise<unknown> => {
-    return postRows("/installments", rows, "Installments uploaded");
+  uploadInstallments: async (rows: UploadRow[], fileName?: string): Promise<unknown> => {
+    return postRows("/installments", rows, "Installments uploaded", fileName);
   },
 
-  uploadPayments: async (rows: UploadRow[]): Promise<unknown> => {
-    return postRows("/payments", rows, "Payments uploaded");
+  uploadPayments: async (rows: UploadRow[], fileName?: string): Promise<unknown> => {
+    return postRows("/payments", rows, "Payments uploaded", fileName);
   },
 };
 

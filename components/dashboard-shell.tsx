@@ -57,6 +57,7 @@ function navItems(role: DashboardRole): NavItem[] {
     return [
       { href: base, label: "Overview", icon: LayoutDashboard },
       { href: `${base}/accounts`, label: "Accounts", icon: BookOpen },
+      { href: `${base}/activity-logs`, label: "Activity logs", icon: ScrollText },
     ]
   }
 
