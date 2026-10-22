@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress"
 import { uploadRows, type UploadRow } from "@/lib/sheet-rows"
 import { toApiErrorMessage } from "@/lib/apiService"
 
-const maxFileBytes = 1024 * 1024
+const maxFileBytes = 2 * 1024 * 1024
 
 function isExcelFile(file: File) {
   const name = file.name.toLowerCase()
@@ -72,7 +72,11 @@ export function ExcelUploadModal({
   const [error, setError] = useState<{ title: string; message: string } | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [notice, setNotice] = useState<{ tone: "success" | "error"; description: string } | null>(null)
+  const [notice, setNotice] = useState<{
+    tone: "success" | "error"
+    title: string
+    description: string
+  } | null>(null)
   const [warningOpen, setWarningOpen] = useState(false)
 
   function stopProgress() {
@@ -117,6 +121,7 @@ export function ExcelUploadModal({
         setProgress(100)
         setNotice({
           tone: "success",
+          title: "Upload finished",
           description: `${title} was uploaded.`,
         })
         handleOpenChange(false)
@@ -128,10 +133,21 @@ export function ExcelUploadModal({
         setProgress(0)
         setNotice({
           tone: "error",
+          title: "Upload did not finish",
           description: toApiErrorMessage(uploadError, "That file could not be uploaded."),
         })
         handleOpenChange(false)
       })
+  }
+
+  function showSizeExceeded() {
+    setWarningOpen(false)
+    setNotice({
+      tone: "error",
+      title: "File exceeds 2MB",
+      description:
+        "Upload stopped. Choose an Excel file that is 2MB or smaller, then try again.",
+    })
   }
 
   function handleOpenChange(next: boolean) {
@@ -251,10 +267,7 @@ export function ExcelUploadModal({
             <p className="text-xs font-medium tracking-wide uppercase">Warning</p>
             <AlertDialogTitle className="text-lg text-white">Check the file size</AlertDialogTitle>
             <AlertDialogDescription className="text-amber-50">
-              The Excel file must not exceed 1MB.
-              {file && file.size > maxFileBytes
-                ? " This file is larger than 1MB, so it cannot be uploaded."
-                : " Continue only if this file is within that size."}
+              The Excel file must not exceed 2MB. Continue only if this file is within that size.
             </AlertDialogDescription>
           </div>
         </div>
@@ -266,21 +279,23 @@ export function ExcelUploadModal({
             className="cursor-pointer bg-white px-4 text-blue-950"
             onClick={() => setWarningOpen(false)}
           >
-            {file && file.size > maxFileBytes ? "Back" : "Cancel"}
+            Cancel
           </Button>
-          {file && file.size <= maxFileBytes ? (
-            <Button
-              type="button"
-              size="sm"
-              className="cursor-pointer bg-amber-500 px-3 text-white hover:bg-amber-600"
-              onClick={() => {
-                setWarningOpen(false)
-                beginUpload()
-              }}
-            >
-              Continue
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            className="cursor-pointer bg-amber-500 px-3 text-white hover:bg-amber-600"
+            onClick={() => {
+              if (file && file.size > maxFileBytes) {
+                showSizeExceeded()
+                return
+              }
+              setWarningOpen(false)
+              beginUpload()
+            }}
+          >
+            Continue
+          </Button>
         </div>
       </AlertDialogContent>
     </AlertDialog>
@@ -289,7 +304,7 @@ export function ExcelUploadModal({
       onOpenChangeAction={(next) => {
         if (!next) setNotice(null)
       }}
-      title="Upload finished"
+      title={notice?.tone === "success" ? notice.title : "Upload finished"}
       description={notice?.tone === "success" ? notice.description : ""}
       durationMs={3000}
     />
@@ -298,9 +313,9 @@ export function ExcelUploadModal({
       onOpenChangeAction={(next) => {
         if (!next) setNotice(null)
       }}
-      title="Upload did not finish"
+      title={notice?.tone === "error" ? notice.title : "Upload did not finish"}
       description={notice?.tone === "error" ? notice.description : ""}
-      durationMs={3000}
+      durationMs={3500}
     />
     </>
   )
