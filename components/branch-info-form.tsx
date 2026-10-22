@@ -7,79 +7,80 @@ export function BranchInfoForm({
 }: {
   customer?: LedgerCustomer
 }) {
-
   return (
-    <div className="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
-      <div className="bg-blue-800 px-5 py-4 text-white">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
+      <div className="shrink-0 bg-blue-800 px-5 py-4 text-white">
         <h2 className="text-2xl font-semibold tracking-tight uppercase">{customer.customerName}</h2>
         <p className="mt-1 text-sm text-blue-100">
           Branch details and the loan inputs for this account. These fields are read only.
         </p>
       </div>
-      <div className="flex max-h-[min(32rem,calc(100svh-18rem))] flex-col gap-6 overflow-y-auto px-5 py-5">
-        <Section title="Branch">
-          <TextField label="Branch name" id="branch-name" value={customer.branchName} />
-          <TextField label="Branch code" id="branch-code" value={customer.branchCode} />
-          <TextField label="Prepared by" id="prepared-by" value={customer.preparedBy} />
-          <TextField label="Approver" id="approver" value={customer.approver} />
-          <TextField label="Contact no." id="contact-no" value={customer.contactNo} />
-          <TextField label="Template version" id="template-version" value={customer.templateVersion} />
-        </Section>
-        <Section title="Loan setup">
-          <TextField
-            label="Customer ID"
-            id="branch-customer-id"
-            value={customer.customerId}
-          />
-          <TextField
-            label="Sales order no."
-            id="branch-sales-order-no"
-            value={customer.salesOrderNo}
-          />
-          <TextField
-            label="Item / unit"
-            id="branch-item-unit"
-            value={customer.itemUnit}
-          />
-          <Field label="Loan start date" htmlFor="branch-loan-start-date">
-            <Input
-              id="branch-loan-start-date"
-              type="date"
-              readOnly
-              value={customer.loanStartDate}
-              className="h-9 bg-white text-blue-950"
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex flex-col gap-6 pb-6">
+          <Section title="Branch">
+            <TextField label="Branch name" id="branch-name" value={customer.branchName} />
+            <TextField label="Branch code" id="branch-code" value={customer.branchCode} />
+            <TextField label="Prepared by" id="prepared-by" value={customer.preparedBy} />
+            <TextField label="Approver" id="approver" value={customer.approver} />
+            <TextField label="Contact no." id="contact-no" value={customer.contactNo} />
+            <TextField label="Template version" id="template-version" value={customer.templateVersion} />
+          </Section>
+          <Section title="Loan setup">
+            <TextField
+              label="Customer ID"
+              id="branch-customer-id"
+              value={customer.customerId}
             />
-          </Field>
-          <MoneyField
-            label="Loan amount"
-            id="branch-loan-amount"
-            value={customer.loanAmount}
-          />
-          <MoneyField
-            label="Down payment"
-            id="branch-down-payment"
-            value={customer.downPayment}
-          />
-          <Field label="Term (months)" htmlFor="branch-term-months">
-            <Input
-              id="branch-term-months"
-              inputMode="numeric"
-              readOnly
-              value={customer.termMonths}
-              className="h-9 bg-white text-blue-950 tabular-nums"
+            <TextField
+              label="Sales order no."
+              id="branch-sales-order-no"
+              value={customer.salesOrderNo}
             />
-          </Field>
-          <MoneyField
-            label="Monthly installment"
-            id="branch-monthly-installment"
-            value={customer.monthlyInstallment}
-          />
-          <MoneyField
-            label="Monthly interest"
-            id="branch-monthly-interest"
-            value={customer.monthlyInterest}
-          />
-        </Section>
+            <TextField
+              label="Item / unit"
+              id="branch-item-unit"
+              value={customer.itemUnit}
+            />
+            <Field label="Loan start date" htmlFor="branch-loan-start-date">
+              <Input
+                id="branch-loan-start-date"
+                type="date"
+                readOnly
+                value={customer.loanStartDate}
+                className="h-9 bg-white text-blue-950"
+              />
+            </Field>
+            <MoneyField
+              label="Loan amount"
+              id="branch-loan-amount"
+              value={customer.loanAmount}
+            />
+            <MoneyField
+              label="Down payment"
+              id="branch-down-payment"
+              value={customer.downPayment}
+            />
+            <Field label="Term (months)" htmlFor="branch-term-months">
+              <Input
+                id="branch-term-months"
+                inputMode="numeric"
+                readOnly
+                value={customer.termMonths}
+                className="h-9 bg-white text-blue-950 tabular-nums"
+              />
+            </Field>
+            <MoneyField
+              label="Monthly installment"
+              id="branch-monthly-installment"
+              value={customer.monthlyInstallment}
+            />
+            <MoneyField
+              label="Monthly interest"
+              id="branch-monthly-interest"
+              value={customer.monthlyInterest}
+            />
+          </Section>
+        </div>
       </div>
     </div>
   )
@@ -145,7 +146,7 @@ function MoneyField({
   return (
     <Field label={label} htmlFor={id}>
       <div className="relative">
-        <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">
+        <span className="pointer-events-none absolute top-1/2 left-3 z-10 -translate-y-1/2 text-sm text-muted-foreground">
           ₱
         </span>
         <Input
