@@ -405,6 +405,51 @@
   box-shadow: 0 8px 16px rgb(30 64 175 / 0.35);
 }
 
+@keyframes branch-remove {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    background-color: rgb(239 246 255 / 0.4);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(0.98) translateY(0);
+    background-color: #fecaca;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+    background-color: #fee2e2;
+  }
+}
+
+@keyframes branch-add {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(16px);
+    background-color: #93c5fd;
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.03) translateY(0);
+    background-color: #bfdbfe;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    background-color: rgb(239 246 255 / 0.4);
+  }
+}
+
+.branch-card-remove {
+  pointer-events: none;
+  animation: branch-remove 550ms ease forwards;
+}
+
+.branch-card-add {
+  animation: branch-add 600ms ease forwards;
+}
+
 @utility bg-logo-tile {
   position: relative;
   isolation: isolate;

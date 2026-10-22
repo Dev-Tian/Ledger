@@ -1,7 +1,7 @@
 "use client"
 
 import { Pencil, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { AddBranchModal } from "@/components/add-branch-modal"
 import { BranchCustomersModal } from "@/components/branch-customers-modal"
@@ -93,9 +93,12 @@ export default function AdminBranchesPage() {
   const [editing, setEditing] = useState<BranchLocation | null>(null)
   const [selected, setSelected] = useState<BranchLocation | null>(null)
   const [deleting, setDeleting] = useState<BranchLocation | null>(null)
+  const [leavingId, setLeavingId] = useState<string | number | null>(null)
+  const [enteringId, setEnteringId] = useState<string | number | null>(null)
   const [removing, setRemoving] = useState(false)
   const [deleteError, setDeleteError] = useState("")
   const [error, setError] = useState("")
+  const skipNextLoad = useRef(false)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -109,6 +112,11 @@ export default function AdminBranchesPage() {
   }, [query])
 
   useEffect(() => {
+    if (skipNextLoad.current) {
+      skipNextLoad.current = false
+      return
+    }
+
     let cancelled = false
 
     async function load() {
@@ -144,9 +152,57 @@ export default function AdminBranchesPage() {
   }
 
   async function addBranch(locationName: string) {
+    const previousIds = new Set(items.map((branch) => String(branch.id)))
     await apiService.addLocation({ location_name: locationName })
-    setPage(1)
-    setReloadKey((key) => key + 1)
+
+    const willResetSearch = search !== ""
+    const willResetPage = page !== 1
+    // Only skip the load effect when search/page actually change (otherwise the flag sticks).
+    if (willResetSearch || willResetPage) skipNextLoad.current = true
+    setQuery("")
+    if (willResetSearch) setSearch("")
+    if (willResetPage) setPage(1)
+    setError("")
+    setLoading(false)
+
+    const [listed, matched] = await Promise.all([
+      apiService.getLocations(1, ""),
+      apiService.getLocations(1, locationName),
+    ])
+    const next = readLocationsPage(listed)
+    const matches = readLocationsPage(matched).locations
+    const nameKey = locationName.trim().toLowerCase()
+    const added =
+      matches.find(
+        (branch) =>
+          branch.locationName.trim().toLowerCase() === nameKey &&
+          !previousIds.has(String(branch.id)),
+      ) ??
+      matches.find((branch) => branch.locationName.trim().toLowerCase() === nameKey) ??
+      next.locations.find(
+        (branch) =>
+          branch.locationName.trim().toLowerCase() === nameKey &&
+          !previousIds.has(String(branch.id)),
+      )
+
+    const withAdded = added
+      ? [
+          added,
+          ...next.locations.filter((branch) => String(branch.id) !== String(added.id)),
+        ]
+      : next.locations
+
+    setItems(withAdded)
+    setLastPage(next.lastPage)
+
+    if (added) {
+      // Force a fresh mount so the CSS enter animation always runs.
+      setEnteringId(null)
+      window.requestAnimationFrame(() => {
+        setEnteringId(added.id)
+        window.setTimeout(() => setEnteringId(null), 600)
+      })
+    }
   }
 
   async function updateBranch(id: string | number, locationName: string) {
@@ -159,12 +215,18 @@ export default function AdminBranchesPage() {
     setRemoving(true)
     setDeleteError("")
     try {
-      await apiService.deleteLocation(deleting.id)
+      const removedId = deleting.id
+      await apiService.deleteLocation(removedId)
+      // Close modal, then animate the card out immediately (no silent wait).
       setDeleting(null)
-      setReloadKey((key) => key + 1)
+      setRemoving(false)
+      setLeavingId(removedId)
+      window.setTimeout(() => {
+        setItems((current) => current.filter((branch) => String(branch.id) !== String(removedId)))
+        setLeavingId(null)
+      }, 550)
     } catch (failure) {
       setDeleteError(toApiErrorMessage(failure, "That branch could not be deleted."))
-    } finally {
       setRemoving(false)
     }
   }
@@ -226,10 +288,19 @@ export default function AdminBranchesPage() {
             </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
-              {items.map((branch) => (
+              {items.map((branch) => {
+                const leaving = leavingId != null && String(branch.id) === String(leavingId)
+                const entering = enteringId != null && String(branch.id) === String(enteringId)
+                return (
                 <article
-                  key={branch.id}
-                  className="flex flex-col gap-4 rounded-xl bg-blue-50/40 p-5 shadow-sm ring-1 ring-blue-200"
+                  key={entering ? `enter-${branch.id}` : String(branch.id)}
+                  className={
+                    leaving
+                      ? "branch-card-remove flex flex-col gap-4 rounded-xl p-5 shadow-sm ring-1 ring-red-200"
+                      : entering
+                        ? "branch-card-add flex flex-col gap-4 rounded-xl p-5 shadow-sm ring-1 ring-blue-400"
+                        : "flex flex-col gap-4 rounded-xl bg-blue-50/40 p-5 shadow-sm ring-1 ring-blue-200"
+                  }
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -244,6 +315,7 @@ export default function AdminBranchesPage() {
                         size="icon-sm"
                         variant="ghost"
                         aria-label={`Edit ${branch.locationName}`}
+                        disabled={leaving}
                         onClick={() => setEditing(branch)}
                       >
                         <Pencil className="text-blue-700" />
@@ -253,6 +325,7 @@ export default function AdminBranchesPage() {
                         size="icon-sm"
                         variant="ghost"
                         aria-label={`Delete ${branch.locationName}`}
+                        disabled={leaving}
                         onClick={() => {
                           setDeleteError("")
                           setDeleting(branch)
@@ -266,13 +339,15 @@ export default function AdminBranchesPage() {
                     type="button"
                     size="sm"
                     className="action-hover bg-blue-800 text-white hover:bg-blue-900"
+                    disabled={leaving}
                     onClick={() => setSelected(branch)}
                   >
                     <Users />
                     View customers
                   </Button>
                 </article>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
