@@ -230,7 +230,7 @@ export function ExcelUploadModal({
                 className="h-2 bg-blue-100 **:data-[slot=progress-indicator]:bg-blue-700"
               />
               <p className="text-xs font-medium text-blue-800 tabular-nums">
-                Uploading {Math.round(progress)}%
+                Uploading {Math.round(progress)}% 
               </p>
             </div>
           ) : null}

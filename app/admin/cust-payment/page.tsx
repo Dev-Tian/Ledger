@@ -10,6 +10,15 @@ import { ViewPaymentModal, type ViewPayment } from "@/components/view-payment-mo
 import { VoidPaymentModal } from "@/components/void-payment-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { useUser } from "@/contexts/UserContext"
 import {
   Table,
@@ -31,6 +40,20 @@ const columns = [
   "Actions",
 ]
 
+const pageSize = 10
+
+function pageNumbers(current: number, last: number) {
+  if (last <= 7) return Array.from({ length: last }, (_, index) => index + 1)
+  const items: (number | "ellipsis")[] = [1]
+  if (current > 3) items.push("ellipsis")
+  for (let page = Math.max(2, current - 1); page <= Math.min(last - 1, current + 1); page += 1) {
+    items.push(page)
+  }
+  if (current < last - 2) items.push("ellipsis")
+  items.push(last)
+  return items
+}
+
 const peso = new Intl.NumberFormat("en-PH", {
   style: "currency",
   currency: "PHP",
@@ -46,6 +69,7 @@ const remarkWhen = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 })
 
+// mock data for testing purposes only 
 const mockPayments: PaymentRow[] = [
   {
     id: "1",
@@ -167,13 +191,15 @@ export default function AdminPaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
   const [query, setQuery] = useState("")
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
   const [payments, setPayments] = useState<PaymentRow[]>(mockPayments)
   const [viewing, setViewing] = useState<PaymentRow | null>(null)
   const [editing, setEditing] = useState<PaymentRow | null>(null)
   const [voiding, setVoiding] = useState<PaymentRow | null>(null)
 
-  const shown = useMemo(() => {
-    const text = query.trim().toLowerCase()
+  const filtered = useMemo(() => {
+    const text = search.trim().toLowerCase()
     if (!text) return payments
     return payments.filter((payment) =>
       [
@@ -186,7 +212,28 @@ export default function AdminPaymentsPage() {
         String(payment.maximumOfAmount),
       ].some((value) => value.toLowerCase().includes(text)),
     )
-  }, [payments, query])
+  }, [payments, search])
+
+  const lastPage = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const shown = useMemo(() => {
+    const current = Math.min(page, lastPage)
+    return filtered.slice((current - 1) * pageSize, current * pageSize)
+  }, [filtered, page, lastPage])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = query.trim()
+      setSearch((current) => {
+        if (current !== next) setPage(1)
+        return next
+      })
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [query])
+
+  useEffect(() => {
+    if (page > lastPage) setPage(lastPage)
+  }, [page, lastPage])
 
   useEffect(() => {
     const timer = window.setTimeout(() => setLoading(false), 600)
@@ -260,7 +307,7 @@ export default function AdminPaymentsPage() {
                 <TableCell colSpan={columns.length} className="px-5 py-6 text-center">
                   <TableEmpty
                     label={
-                      query.trim()
+                      search
                         ? "No payments match that search."
                         : "No payments are listed yet."
                     }
