@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  ledger-client:
+    build: .
+    container_name: ledger-client
+    restart: unless-stopped
+    ports:
+      - "7070:7070"
