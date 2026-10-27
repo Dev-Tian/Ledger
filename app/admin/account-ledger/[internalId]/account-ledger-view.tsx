@@ -119,6 +119,7 @@ function loanSummary(customer: LedgerCustomer) {
       ["Total payments", peso.format(customer.totalPayments)],
       ["Total amount due", peso.format(customer.totalAmountDue)],
       ["Total balance due", peso.format(customer.totalBalanceDue)],
+      ["Unrecovered cost", peso.format(customer.unrecoveredCost)],
     ],
   ]
 }
@@ -132,9 +133,8 @@ function LoanLedgerSummary({
 }) {
   return (
     <div className="w-full min-w-0 overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
-      <div className="bg-blue-800 px-4 py-3 text-white sm:px-5 sm:py-4">
-        <h2 className="text-sm font-semibold tracking-tight sm:text-base">{title}</h2>
-        <p className="mt-1 text-xs text-blue-100 sm:text-sm">These fields are read only.</p>
+      <div className="bg-blue-800 px-4 py-2 text-white sm:px-5 sm:py-4">
+        <h2 className="text-sm font-semibold tracking-tight sm:text-base">{customer.customerName}</h2>
       </div>
       <div className="grid gap-4 px-4 py-4 sm:gap-6 sm:px-5 sm:py-5 md:grid-cols-2 lg:grid-cols-3">
         {loanSummary(customer).map((column) => (
@@ -147,12 +147,6 @@ function LoanLedgerSummary({
             ))}
           </dl>
         ))}
-      </div>
-      <div className="flex items-center justify-between gap-4 border-t bg-blue-50 px-4 py-3 sm:px-5">
-        <p className="text-sm font-medium text-blue-800">Unrecovered cost</p>
-        <p className="rounded-lg bg-amber-200 px-3 py-1 text-sm font-semibold tabular-nums text-blue-950">
-          {peso.format(customer.unrecoveredCost)}
-        </p>
       </div>
     </div>
   )

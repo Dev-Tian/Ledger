@@ -9,11 +9,8 @@ export function BranchInfoForm({
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-blue-200">
-      <div className="shrink-0 bg-blue-800 px-5 py-4 text-white">
-        <h2 className="text-2xl font-semibold tracking-tight uppercase">{customer.customerName}</h2>
-        <p className="mt-1 text-sm text-blue-100">
-          Branch details and the loan inputs for this account. These fields are read only.
-        </p>
+      <div className="shrink-0 bg-blue-800 px-5 py-2 text-white">
+        <h2 className="text-lg font-semibold tracking-tight uppercase">{customer.customerName}</h2>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         <div className="flex flex-col gap-6 pb-6">
