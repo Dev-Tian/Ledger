@@ -14,7 +14,7 @@ export async function loadConnectionGifs(): Promise<{
   revoke: () => void;
 }> {
   const objectUrls: string[] = [];
-  const srcs = { ...CONNECTION_GIF_PATHS };
+  const srcs: ConnectionGifSrcs = { ...CONNECTION_GIF_PATHS };
 
   await Promise.all(
     (Object.keys(CONNECTION_GIF_PATHS) as ConnectionGifKey[]).map(async (key) => {
