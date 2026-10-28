@@ -108,8 +108,10 @@ function loanSummary(customer: LedgerCustomer) {
     [
       ["Sales order no.", customer.salesOrderNo],
       ["Item / unit", customer.itemUnit],
+      ["Item class", customer.itemClass || "—"],
       ["Original loan amount", peso.format(Number(customer.loanAmount))],
       ["Down payment", peso.format(Number(customer.downPayment))],
+      ["Rebate amount", peso.format(Number(customer.rebateAmount) || 0)],
       ["Monthly interest", peso.format(Number(customer.monthlyInterest))],
       ["Monthly installment", peso.format(principal + Number(customer.monthlyInterest))],
     ],
@@ -358,6 +360,7 @@ function readAccount(payload: unknown) {
     salesOrderNo: textOf(account.so_number) || textOf(account.sales_order_no),
     location: locationName,
     itemUnit: textOf(account.item),
+    itemClass: textOf(account.item_class),
     loanStartDate: purchaseRaw.slice(0, 10),
     loanStartLabel: formatDate(purchaseRaw),
     loanAmount:
