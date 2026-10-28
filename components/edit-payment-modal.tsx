@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { toApiErrorMessage } from "@/lib/apiService"
 import { ChevronDown } from "lucide-react"
 
 function YesNoDropdown({
@@ -74,7 +75,7 @@ export function EditPaymentModal({
   open: boolean
   payment: ViewPayment | null
   onOpenChangeAction: (open: boolean) => void
-  onSavedAction: (payment: ViewPayment) => void
+  onSavedAction: (payment: ViewPayment) => void | Promise<void>
 }) {
   const [documentNumber, setDocumentNumber] = useState("")
   const [date, setDate] = useState("")
@@ -117,7 +118,7 @@ export function EditPaymentModal({
     }
   }, [open, payment])
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault()
     if (!payment) return
     const nextName = name.trim()
@@ -129,22 +130,27 @@ export function EditPaymentModal({
     }
     setSaving(true)
     setError("")
-    onSavedAction({
-      ...payment,
-      documentNumber: nextDocument,
-      date: date.trim(),
-      name: nextName,
-      orNumber: orNumber.trim(),
-      maximumOfAmount: amount,
-      memoMain: memoMain.trim(),
-      minimumSalesOrderNumber: minimumSalesOrderNumber.trim(),
-      minimumInvoiceNumberLeasing: minimumInvoiceNumberLeasing.trim(),
-      eligibleForRebate: eligibleForRebate.trim(),
-      genericCollector: genericCollector.trim(),
-      location: location.trim(),
-    })
-    setSaving(false)
-    onOpenChangeAction(false)
+    try {
+      await onSavedAction({
+        ...payment,
+        documentNumber: nextDocument,
+        date: date.trim(),
+        name: nextName,
+        orNumber: orNumber.trim(),
+        maximumOfAmount: amount,
+        memoMain: memoMain.trim(),
+        minimumSalesOrderNumber: minimumSalesOrderNumber.trim(),
+        minimumInvoiceNumberLeasing: minimumInvoiceNumberLeasing.trim(),
+        eligibleForRebate: eligibleForRebate.trim(),
+        genericCollector: genericCollector.trim(),
+        location: location.trim(),
+      })
+      onOpenChangeAction(false)
+    } catch (saveError) {
+      setError(toApiErrorMessage(saveError, "This payment could not be saved."))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (

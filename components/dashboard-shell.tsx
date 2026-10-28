@@ -128,7 +128,7 @@ function HeaderClock() {
 function SidebarPanelToggle({ className }: { className?: string }) {
   return (
     <SidebarTrigger
-      className={`text-white hover:bg-blue-700 hover:text-white ${className ?? ""}`}
+      className={`text-white hover:bg-white/15 hover:text-white ${className ?? ""}`}
     />
   )
 }
@@ -235,7 +235,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </header>
         <div className="relative flex min-h-0 w-full flex-1 overflow-hidden">
         {showSidebar ? <SidebarEdgeToggle /> : null}
-        {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-blue-600 [&_[data-sidebar=sidebar]]:text-white">
+        {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-gradient-to-b [&_[data-sidebar=sidebar]]:from-blue-800 [&_[data-sidebar=sidebar]]:via-blue-700 [&_[data-sidebar=sidebar]]:to-sky-600 [&_[data-sidebar=sidebar]]:text-white">
           <div className="flex justify-start px-2 pt-3">
             <SidebarPanelToggle />
           </div>
@@ -248,7 +248,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                       asChild
                       isActive={pathname === item.href}
                       tooltip={item.label}
-                      className="h-10 rounded-lg px-3 text-white hover:bg-blue-700 hover:text-white data-active:bg-white data-active:font-semibold data-active:text-blue-800"
+                      className="h-10 rounded-lg px-3 text-white hover:bg-white/15 hover:text-white data-active:bg-white data-active:font-semibold data-active:text-blue-800"
                     >
                       <Link href={item.href}>
                         <item.icon />

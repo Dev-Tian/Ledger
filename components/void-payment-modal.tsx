@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { toApiErrorMessage } from "@/lib/apiService"
 
 const peso = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -29,7 +30,7 @@ export function VoidPaymentModal({
   open: boolean
   payment: ViewPayment | null
   onOpenChangeAction: (open: boolean) => void
-  onVoidedAction: (payment: ViewPayment, reason: string) => void
+  onVoidedAction: (payment: ViewPayment, reason: string) => void | Promise<void>
 }) {
   const [reason, setReason] = useState("")
   const [loading, setLoading] = useState(false)
@@ -52,7 +53,7 @@ export function VoidPaymentModal({
     }
   }, [open, payment])
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault()
     if (!payment) return
     const nextReason = reason.trim()
@@ -62,9 +63,14 @@ export function VoidPaymentModal({
     }
     setVoiding(true)
     setError("")
-    onVoidedAction(payment, nextReason)
-    setVoiding(false)
-    onOpenChangeAction(false)
+    try {
+      await onVoidedAction(payment, nextReason)
+      onOpenChangeAction(false)
+    } catch (voidError) {
+      setError(toApiErrorMessage(voidError, "This payment could not be voided."))
+    } finally {
+      setVoiding(false)
+    }
   }
 
   return (

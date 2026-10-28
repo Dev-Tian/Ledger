@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Ban, Eye, Pencil, RefreshCw, Search } from "lucide-react"
 
 import { LoadingState } from "@/components/loading-state"
 import { TableEmpty } from "@/components/table-empty"
 import { EditPaymentModal } from "@/components/edit-payment-modal"
-import { ViewPaymentModal, type ViewPayment } from "@/components/view-payment-modal"
+import { ViewPaymentModal, type PaymentRemark, type ViewPayment } from "@/components/view-payment-modal"
 import { VoidPaymentModal } from "@/components/void-payment-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,7 +19,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { useUser } from "@/contexts/UserContext"
 import {
   Table,
   TableBody,
@@ -28,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { apiService, toApiErrorMessage } from "@/lib/apiService"
 
 const columns = [
   "Document number",
@@ -40,7 +40,26 @@ const columns = [
   "Actions",
 ]
 
-const pageSize = 10
+type PaymentRow = ViewPayment
+
+const peso = new Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+})
+
+const displayDate = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+})
+
+const remarkWhen = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+})
 
 function pageNumbers(current: number, last: number) {
   if (last <= 7) return Array.from({ length: last }, (_, index) => index + 1)
@@ -54,123 +73,129 @@ function pageNumbers(current: number, last: number) {
   return items
 }
 
-const peso = new Intl.NumberFormat("en-PH", {
-  style: "currency",
-  currency: "PHP",
-})
+function textOf(value: unknown) {
+  return typeof value === "string" || typeof value === "number" ? String(value) : ""
+}
 
-type PaymentRow = ViewPayment
+function formatDate(value: string) {
+  if (!value) return ""
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return value
+  return displayDate.format(date)
+}
 
-const remarkWhen = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-})
+function locationOf(value: unknown) {
+  if (typeof value === "string" || typeof value === "number") return String(value)
+  if (value && typeof value === "object") {
+    const record = value as { location_name?: unknown; name?: unknown }
+    return textOf(record.location_name) || textOf(record.name)
+  }
+  return ""
+}
 
-// mock data for testing purposes only 
-const mockPayments: PaymentRow[] = [
-  {
-    id: "1",
-    documentNumber: "PV-2026-0142",
-    date: "Oct 14, 2026",
-    name: "Maria Santos",
-    orNumber: "OR-88421",
-    maximumOfAmount: 3750,
-    memoMain: "Monthly installment",
-    minimumSalesOrderNumber: "SO-24081",
-    minimumInvoiceNumberLeasing: "",
-    eligibleForRebate: "Yes",
-    genericCollector: "Collector A",
-    location: "Cebu",
-    remarks: [
+function readRemarks(value: unknown): PaymentRemark[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item, index) => {
+    if (!item || typeof item !== "object") return []
+    const row = item as Record<string, unknown>
+    const actionText = textOf(row.action).toLowerCase()
+    const action = actionText === "voided" ? "voided" : actionText === "edited" ? "edited" : null
+    if (!action) return []
+    const atRaw = textOf(row.at) || textOf(row.created_at) || textOf(row.updated_at)
+    return [
       {
-        id: "r1",
-        action: "edited",
-        by: "Dev Allan",
-        at: "Oct 14, 2026, 2:10 PM",
-        detail: "Updated memo after collection posting.",
+        id: textOf(row.id) || `remark-${index}`,
+        action,
+        by: textOf(row.by) || textOf(row.user_name) || textOf(row.user) || "Admin",
+        at: atRaw ? formatDate(atRaw) || remarkWhen.format(new Date(atRaw)) : "",
+        detail: textOf(row.detail) || textOf(row.reason) || textOf(row.message) || undefined,
       },
-    ],
-  },
-  {
-    id: "2",
-    documentNumber: "PV-2026-0148",
-    date: "Oct 15, 2026",
-    name: "Sample Customer",
-    orNumber: "OR-88455",
-    maximumOfAmount: 6313,
-    memoMain: "Down payment",
-    minimumSalesOrderNumber: "SO-0001",
-    minimumInvoiceNumberLeasing: "INV-10021",
-    eligibleForRebate: "No",
-    genericCollector: "Collector B",
-    location: "Bohol",
-    remarks: [],
-  },
-  {
-    id: "3",
-    documentNumber: "PV-2026-0151",
-    date: "Oct 16, 2026",
-    name: "Juan Dela Cruz",
-    orNumber: "OR-88502",
-    maximumOfAmount: 4200,
-    memoMain: "Partial collection",
-    minimumSalesOrderNumber: "SO-24110",
-    minimumInvoiceNumberLeasing: "INV-10044",
-    eligibleForRebate: "Yes",
-    genericCollector: "Collector A",
-    location: "Cebu",
-    remarks: [
-      {
-        id: "r2",
-        action: "edited",
-        by: "Dev Jenecil",
-        at: "Oct 16, 2026, 9:40 AM",
-        detail: "Corrected OR number.",
-      },
-      {
-        id: "r3",
-        action: "voided",
-        by: "Dev Zart",
-        at: "Oct 16, 2026, 4:05 PM",
-        detail: "Posted against the wrong sales order.",
-      },
-    ],
-    voided: true,
-  },
-  {
-    id: "4",
-    documentNumber: "PV-2026-0159",
-    date: "Oct 17, 2026",
-    name: "Ana Reyes",
-    orNumber: "OR-88540",
-    maximumOfAmount: 2500,
-    memoMain: "Rebate adjustment",
-    minimumSalesOrderNumber: "SO-23990",
-    minimumInvoiceNumberLeasing: "",
-    eligibleForRebate: "Yes",
-    genericCollector: "Collector C",
-    location: "Alano",
-    remarks: [],
-  },
-  {
-    id: "5",
-    documentNumber: "PV-2026-0164",
-    date: "Oct 18, 2026",
-    name: "Carlo Mendoza",
-    orNumber: "OR-88588",
-    maximumOfAmount: 5100,
-    memoMain: "Full monthly due",
-    minimumSalesOrderNumber: "SO-24155",
-    minimumInvoiceNumberLeasing: "INV-10088",
-    eligibleForRebate: "No",
-    genericCollector: "Collector B",
-    location: "Cebu",
-    remarks: [],
-  },
-]
+    ]
+  })
+}
+
+function readPayment(item: unknown): PaymentRow | null {
+  if (!item || typeof item !== "object") return null
+  const row = item as Record<string, unknown>
+  const id = textOf(row.id)
+  if (!id) return null
+  const voided =
+    row.voided === true ||
+    row.is_voided === true ||
+    row.voided === 1 ||
+    textOf(row.status).toLowerCase() === "voided"
+  const rebate = textOf(row.eligible_for_rebate)
+  return {
+    id,
+    documentNumber: textOf(row.document_number) || "—",
+    date: formatDate(textOf(row.date)) || textOf(row.date) || "—",
+    name: textOf(row.name) || "—",
+    orNumber: textOf(row.or_number),
+    maximumOfAmount: Number(row.maximum_of_amount) || 0,
+    memoMain: textOf(row.memo_main),
+    minimumSalesOrderNumber:
+      textOf(row.minimum_sales_order_number) ||
+      textOf(row.minimum_sales_order_number_for_dp),
+    minimumInvoiceNumberLeasing: textOf(row.minimum_invoice_number_leasing),
+    eligibleForRebate:
+      rebate.toLowerCase() === "yes" || rebate === "1"
+        ? "Yes"
+        : rebate.toLowerCase() === "no" || rebate === "0"
+          ? "No"
+          : rebate,
+    genericCollector: textOf(row.generic_collector),
+    location: locationOf(row.location),
+    voided: voided || undefined,
+    remarks: readRemarks(row.remarks),
+  }
+}
+
+function paymentList(payload: unknown): unknown[] {
+  if (!payload || typeof payload !== "object") return []
+  const record = payload as {
+    payments?: { data?: unknown } | unknown[]
+    data?: unknown
+  }
+  const payments = record.payments
+  if (Array.isArray(payments)) return payments
+  if (payments && typeof payments === "object" && Array.isArray(payments.data)) return payments.data
+  if (Array.isArray(record.data)) return record.data
+  return []
+}
+
+function readPayments(payload: unknown): PaymentRow[] {
+  return paymentList(payload).flatMap((item) => {
+    const payment = readPayment(item)
+    return payment ? [payment] : []
+  })
+}
+
+function readPaymentPage(payload: unknown, count: number) {
+  const record =
+    payload && typeof payload === "object"
+      ? (payload as { payments?: { current_page?: number; last_page?: number }; current_page?: number; last_page?: number })
+      : null
+  const pager = record?.payments && !Array.isArray(record.payments) ? record.payments : record
+  const currentPage = pager?.current_page && pager.current_page > 0 ? pager.current_page : 1
+  const lastPage = pager?.last_page && pager.last_page > 0 ? pager.last_page : 1
+  return { currentPage, lastPage: Math.max(lastPage, count > 0 ? 1 : 1) }
+}
+
+function paymentPayload(payment: ViewPayment): Record<string, unknown> {
+  return {
+    document_number: payment.documentNumber,
+    date: payment.date,
+    name: payment.name,
+    or_number: payment.orNumber,
+    maximum_of_amount: payment.maximumOfAmount,
+    memo_main: payment.memoMain,
+    minimum_sales_order_number_for_dp: payment.minimumSalesOrderNumber,
+    minimum_invoice_number_leasing: payment.minimumInvoiceNumberLeasing,
+    eligible_for_rebate: payment.eligibleForRebate,
+    generic_collector: payment.genericCollector,
+    location: payment.location,
+  }
+}
 
 function initials(name: string) {
   const parts = name.split(/\s+/).filter(Boolean)
@@ -178,47 +203,18 @@ function initials(name: string) {
   return letters.join("") || "?"
 }
 
-function actorName(user: { name?: string; fname?: string; lname?: string } | null) {
-  return (
-    user?.name?.trim() ||
-    [user?.fname, user?.lname].filter(Boolean).join(" ").trim() ||
-    "Admin"
-  )
-}
-
 export default function AdminPaymentsPage() {
-  const { user } = useUser()
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
   const [query, setQuery] = useState("")
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
-  const [payments, setPayments] = useState<PaymentRow[]>(mockPayments)
+  const [lastPage, setLastPage] = useState(1)
+  const [payments, setPayments] = useState<PaymentRow[]>([])
+  const [error, setError] = useState("")
   const [viewing, setViewing] = useState<PaymentRow | null>(null)
   const [editing, setEditing] = useState<PaymentRow | null>(null)
   const [voiding, setVoiding] = useState<PaymentRow | null>(null)
-
-  const filtered = useMemo(() => {
-    const text = search.trim().toLowerCase()
-    if (!text) return payments
-    return payments.filter((payment) =>
-      [
-        payment.documentNumber,
-        payment.date,
-        payment.name,
-        payment.orNumber,
-        payment.memoMain,
-        payment.minimumSalesOrderNumber,
-        String(payment.maximumOfAmount),
-      ].some((value) => value.toLowerCase().includes(text)),
-    )
-  }, [payments, search])
-
-  const lastPage = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const shown = useMemo(() => {
-    const current = Math.min(page, lastPage)
-    return filtered.slice((current - 1) * pageSize, current * pageSize)
-  }, [filtered, page, lastPage])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -232,16 +228,66 @@ export default function AdminPaymentsPage() {
   }, [query])
 
   useEffect(() => {
-    if (page > lastPage) setPage(lastPage)
-  }, [page, lastPage])
+    let cancelled = false
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 600)
-    return () => window.clearTimeout(timer)
-  }, [reloadKey])
+    async function load() {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await apiService.getPayments(page, search)
+        if (!cancelled) {
+          const next = readPayments(data)
+          const pager = readPaymentPage(data, next.length)
+          setPayments(next)
+          setPage(pager.currentPage)
+          setLastPage(pager.lastPage)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setPayments([])
+          setError(toApiErrorMessage(loadError, "Payments could not be loaded."))
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [page, reloadKey, search])
 
   function refresh() {
     setLoading(true)
+    setReloadKey((key) => key + 1)
+  }
+
+  async function savePayment(next: ViewPayment) {
+    await apiService.updatePayment(next.id, paymentPayload(next))
+    setEditing(null)
+    setViewing((current) => (current?.id === next.id ? next : current))
+    setReloadKey((key) => key + 1)
+  }
+
+  async function voidPayment(payment: ViewPayment, reason: string) {
+    await apiService.voidPayment(payment.id, reason)
+    const updated: PaymentRow = {
+      ...payment,
+      voided: true,
+      remarks: [
+        {
+          id: `void-${Date.now()}`,
+          action: "voided",
+          by: "Admin",
+          at: remarkWhen.format(new Date()),
+          detail: reason,
+        },
+        ...payment.remarks,
+      ],
+    }
+    setVoiding(null)
+    setViewing((current) => (current?.id === updated.id ? updated : current))
     setReloadKey((key) => key + 1)
   }
 
@@ -302,20 +348,19 @@ export default function AdminPaymentsPage() {
                   <LoadingState />
                 </TableCell>
               </TableRow>
-            ) : shown.length === 0 ? (
+            ) : error || payments.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={columns.length} className="px-5 py-6 text-center">
                   <TableEmpty
                     label={
-                      search
-                        ? "No payments match that search."
-                        : "No payments are listed yet."
+                      error ||
+                      (search ? "No payments match that search." : "No payments are listed yet.")
                     }
                   />
                 </TableCell>
               </TableRow>
             ) : (
-              shown.map((payment) => {
+              payments.map((payment) => {
                 const edited = !payment.voided && payment.remarks.some((remark) => remark.action === "edited")
                 const rowTone = payment.voided
                   ? "bg-red-50"
@@ -323,97 +368,149 @@ export default function AdminPaymentsPage() {
                     ? "bg-blue-50"
                     : "bg-white"
                 return (
-                <TableRow
-                  key={payment.id}
-                  className={
-                    payment.voided
-                      ? "bg-red-50/80 hover:bg-red-50"
-                      : edited
-                        ? "bg-blue-50/80 hover:bg-blue-100/80"
-                        : "bg-white hover:bg-blue-50/70"
-                  }
-                >
-                  <TableCell className="px-5 py-3">
-                    <span
-                      className={
-                        payment.voided
-                          ? "inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-red-700 ring-1 ring-red-200"
-                          : "inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200"
-                      }
-                    >
-                      {payment.documentNumber}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-5 py-3 whitespace-nowrap text-blue-950/80">
-                    {payment.date}
-                  </TableCell>
-                  <TableCell className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-800 text-xs font-semibold text-white">
-                        {initials(payment.name)}
-                      </span>
-                      <span className="font-medium text-blue-950">{payment.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-5 py-3">
-                    <span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-sky-800 ring-1 ring-sky-200">
-                      {payment.orNumber || "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-5 py-3 tabular-nums text-blue-950">
-                    {peso.format(payment.maximumOfAmount)}
-                  </TableCell>
-                  <TableCell className="px-5 py-3 text-blue-950/80">
-                    {payment.memoMain || "—"}
-                  </TableCell>
-                  <TableCell className="px-5 py-3">
-                    <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200">
-                      {payment.minimumSalesOrderNumber || "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell
-                    className={`sticky right-0 z-10 px-5 py-3 whitespace-nowrap shadow-[-8px_0_12px_-8px_rgb(30_64_175_/_0.18)] ${rowTone}`}
+                  <TableRow
+                    key={payment.id}
+                    className={
+                      payment.voided
+                        ? "bg-red-50/80 hover:bg-red-50"
+                        : edited
+                          ? "bg-blue-50/80 hover:bg-blue-100/80"
+                          : "bg-white hover:bg-blue-50/70"
+                    }
                   >
-                    <div className="inline-flex shrink-0 items-center gap-1.5">
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="outline"
-                        className="shrink-0 cursor-pointer bg-white text-blue-700 hover:bg-blue-50"
-                        aria-label={`View ${payment.documentNumber}`}
-                        onClick={() => setViewing(payment)}
+                    <TableCell className="px-5 py-3">
+                      <span
+                        className={
+                          payment.voided
+                            ? "inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-red-700 ring-1 ring-red-200"
+                            : "inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200"
+                        }
                       >
-                        <Eye />
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="outline"
-                        className="shrink-0 cursor-pointer bg-white text-blue-700 hover:bg-blue-50"
-                        aria-label={`Edit ${payment.documentNumber}`}
-                        disabled={payment.voided}
-                        onClick={() => setEditing(payment)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="outline"
-                        className="shrink-0 cursor-pointer bg-white text-red-600 hover:bg-red-50"
-                        aria-label={`Void ${payment.documentNumber}`}
-                        disabled={payment.voided}
-                        onClick={() => setVoiding(payment)}
-                      >
-                        <Ban />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )})
+                        {payment.documentNumber}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-5 py-3 whitespace-nowrap text-blue-950/80">
+                      {payment.date}
+                    </TableCell>
+                    <TableCell className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-800 text-xs font-semibold text-white">
+                          {initials(payment.name)}
+                        </span>
+                        <span className="font-medium text-blue-950">{payment.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-5 py-3">
+                      <span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-sky-800 ring-1 ring-sky-200">
+                        {payment.orNumber || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-5 py-3 tabular-nums text-blue-950">
+                      {peso.format(payment.maximumOfAmount)}
+                    </TableCell>
+                    <TableCell className="px-5 py-3 text-blue-950/80">
+                      {payment.memoMain || "—"}
+                    </TableCell>
+                    <TableCell className="px-5 py-3">
+                      <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200">
+                        {payment.minimumSalesOrderNumber || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell
+                      className={`sticky right-0 z-10 px-5 py-3 whitespace-nowrap shadow-[-8px_0_12px_-8px_rgb(30_64_175_/_0.18)] ${rowTone}`}
+                    >
+                      <div className="inline-flex shrink-0 items-center gap-1.5">
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="outline"
+                          className="shrink-0 cursor-pointer bg-white text-blue-700 hover:bg-blue-50"
+                          aria-label={`View ${payment.documentNumber}`}
+                          onClick={() => setViewing(payment)}
+                        >
+                          <Eye />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="outline"
+                          className="shrink-0 cursor-pointer bg-white text-blue-700 hover:bg-blue-50"
+                          aria-label={`Edit ${payment.documentNumber}`}
+                          disabled={payment.voided}
+                          onClick={() => setEditing(payment)}
+                        >
+                          <Pencil />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="outline"
+                          className="shrink-0 cursor-pointer bg-white text-red-600 hover:bg-red-50"
+                          aria-label={`Void ${payment.documentNumber}`}
+                          disabled={payment.voided}
+                          onClick={() => setVoiding(payment)}
+                        >
+                          <Ban />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
+        <div className="shrink-0 border-t border-blue-100 bg-blue-50/50 px-4 py-3">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  text="Previous"
+                  className={page <= 1 ? "pointer-events-none opacity-40" : "text-blue-950"}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    if (page > 1) setPage(page - 1)
+                  }}
+                />
+              </PaginationItem>
+              {pageNumbers(page, lastPage).map((item, index) => (
+                <PaginationItem key={item === "ellipsis" ? `ellipsis-${index}` : item}>
+                  {item === "ellipsis" ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      href="#"
+                      isActive={item === page}
+                      className={
+                        item === page
+                          ? "bg-blue-800 text-white hover:bg-blue-800 hover:text-white"
+                          : "text-blue-950"
+                      }
+                      onClick={(event) => {
+                        event.preventDefault()
+                        setPage(item)
+                      }}
+                    >
+                      {item}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  text="Next"
+                  className={page >= lastPage ? "pointer-events-none opacity-40" : "text-blue-950"}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    if (page < lastPage) setPage(page + 1)
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </div>
       <ViewPaymentModal
         open={viewing !== null}
@@ -428,25 +525,7 @@ export default function AdminPaymentsPage() {
         onOpenChangeAction={(open) => {
           if (!open) setEditing(null)
         }}
-        onSavedAction={(next) => {
-          const updated: PaymentRow = {
-            ...next,
-            remarks: [
-              {
-                id: `edit-${Date.now()}`,
-                action: "edited",
-                by: actorName(user),
-                at: remarkWhen.format(new Date()),
-                detail: "Payment details were updated.",
-              },
-              ...next.remarks,
-            ],
-          }
-          setPayments((current) =>
-            current.map((payment) => (payment.id === updated.id ? updated : payment)),
-          )
-          setViewing((current) => (current?.id === updated.id ? updated : current))
-        }}
+        onSavedAction={savePayment}
       />
       <VoidPaymentModal
         open={voiding !== null}
@@ -454,26 +533,7 @@ export default function AdminPaymentsPage() {
         onOpenChangeAction={(open) => {
           if (!open) setVoiding(null)
         }}
-        onVoidedAction={(payment, reason) => {
-          const updated: PaymentRow = {
-            ...payment,
-            voided: true,
-            remarks: [
-              {
-                id: `void-${Date.now()}`,
-                action: "voided",
-                by: actorName(user),
-                at: remarkWhen.format(new Date()),
-                detail: reason,
-              },
-              ...payment.remarks,
-            ],
-          }
-          setPayments((current) =>
-            current.map((row) => (row.id === updated.id ? updated : row)),
-          )
-          setViewing((current) => (current?.id === updated.id ? updated : current))
-        }}
+        onVoidedAction={voidPayment}
       />
     </section>
   )
