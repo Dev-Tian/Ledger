@@ -6,7 +6,6 @@ export type LedgerCustomer = {
   salesOrderNo: string
   location: string
   itemUnit: string
-  itemClass: string
   loanStartDate: string
   loanStartLabel: string
   loanAmount: string
@@ -40,7 +39,6 @@ export const ledgerCustomers: LedgerCustomer[] = [
     salesOrderNo: "SO-0001",
     location: "Bohol",
     itemUnit: "Smash 115",
-    itemClass: "Motorcycle",
     loanStartDate: "2026-04-03",
     loanStartLabel: "Apr 3, 2026",
     loanAmount: "242268",
@@ -72,7 +70,6 @@ export const ledgerCustomers: LedgerCustomer[] = [
     salesOrderNo: "SO-24081",
     location: "Cebu",
     itemUnit: "Honda Click 125",
-    itemClass: "Motorcycle",
     loanStartDate: "2026-10-14",
     loanStartLabel: "Oct 14, 2026",
     loanAmount: "98000",
