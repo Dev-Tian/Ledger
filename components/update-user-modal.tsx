@@ -200,7 +200,7 @@ export function UpdateUserModal({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="bg-white px-4"
+                  className="bg-blue-400 text-white px-4 hover:bg-red-500 hover:text-white cursor-pointer"
                   onClick={() => onOpenChangeAction(false)}
                 >
                   Cancel
@@ -208,7 +208,7 @@ export function UpdateUserModal({
                 <Button
                   type="submit"
                   size="sm"
-                  className="bg-blue-800 px-4 text-white hover:bg-blue-900"
+                  className="bg-blue-800 px-4 text-white hover:bg-blue-900 hover:text-white cursor-pointer"
                   disabled={saving || user?.id == null}
                 >
                   {saving ? "Saving" : "Save"}
