@@ -28,21 +28,15 @@ import { useUser } from "@/contexts/UserContext"
 import { apiService, toApiErrorMessage } from "@/lib/apiService"
 import { subscribeActivityLogs } from "@/lib/echo"
 
-const columns = ["When", "User", "Action", "Area", "Detail"]
-
-const areas = ["All", "Users", "Uploads", "Accounts"] as const
+const columns = ["Date", "User", "Detail"]
 
 const pageSize = 10
-
-type ActivityAction = "Updated" | "Uploaded" | "Added" | "Deleted"
 
 type Activity = {
   id: string
   when: string
   whenAt: number
   user: string
-  action: ActivityAction
-  area: Exclude<(typeof areas)[number], "All"> | "Other"
   detail: string
 }
 
@@ -78,44 +72,6 @@ function newestFirst(list: Activity[]) {
   })
 }
 
-function inferAction(detail: string): ActivityAction {
-  const text = detail.toLowerCase()
-  if (text.includes("upload")) return "Uploaded"
-  if (text.includes("delet") || text.includes("removed")) return "Deleted"
-  if (/\b(update|updated|edit|edited|changed|change)\b/.test(text)) return "Updated"
-  if (text.includes("add") || text.includes("created")) return "Added"
-  return "Updated"
-}
-
-function normalizeAction(raw: unknown, detail: string): ActivityAction {
-  const value = textOf(raw).trim().toLowerCase()
-  if (value === "uploaded" || value === "upload") return "Uploaded"
-  if (value === "deleted" || value === "delete" || value === "removed") return "Deleted"
-  if (value === "added" || value === "add" || value === "created" || value === "create") return "Added"
-  if (
-    value === "updated" ||
-    value === "update" ||
-    value === "edited" ||
-    value === "edit" ||
-    value === "changed"
-  ) {
-    return "Updated"
-  }
-  return inferAction(detail)
-}
-
-function inferArea(detail: string, action: ActivityAction): Activity["area"] {
-  const text = detail.toLowerCase()
-  if (text.includes("user") || text.includes("role") || text.includes("employee")) return "Users"
-  if (text.includes("upload") || text.includes("installment") || text.includes("payment") || text.includes("spreadsheet")) {
-    return "Uploads"
-  }
-  if (text.includes("account") || text.includes("ledger")) return "Accounts"
-  if (action === "Uploaded") return "Uploads"
-  if (action === "Added" || action === "Deleted") return "Users"
-  return "Other"
-}
-
 /** Backend puts the actor in `info` (e.g. "Uploader: Jane Doe"), not a `user` field. */
 function inferUser(detail: string, fallback: string) {
   if (fallback) return fallback
@@ -136,12 +92,6 @@ function mapLogItem(item: unknown): Activity | null {
   const id = textOf(row.id)
   const detail = textOf(row.info) || textOf(row.detail) || textOf(row.message)
   if (!id && !detail) return null
-  const action = normalizeAction(row.action, detail)
-  const areaValue = textOf(row.area)
-  const area =
-    areaValue === "Users" || areaValue === "Uploads" || areaValue === "Accounts"
-      ? areaValue
-      : inferArea(detail, action)
   const nestedUser =
     row.user && typeof row.user === "object" ? (row.user as { name?: unknown; fname?: unknown; lname?: unknown }) : null
   const nestedName =
@@ -158,8 +108,6 @@ function mapLogItem(item: unknown): Activity | null {
     when: formatWhen(whenRaw),
     whenAt: whenAtOf(whenRaw),
     user,
-    action,
-    area,
     detail: detail || "—",
   }
 }
@@ -221,13 +169,6 @@ function initials(name: string) {
   const parts = name.split(/\s+/).filter(Boolean)
   const letters = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "")
   return letters.join("") || "?"
-}
-
-function actionClass(action: ActivityAction) {
-  if (action === "Deleted") return "bg-red-50 text-red-700 ring-red-200"
-  if (action === "Uploaded") return "bg-sky-50 text-sky-800 ring-sky-200"
-  if (action === "Added") return "bg-emerald-50 text-emerald-800 ring-emerald-200"
-  return "bg-blue-50 text-blue-800 ring-blue-200"
 }
 
 /** Newest (page 1 only): blue. Previous recent: yellow. Older / later pages: white. */
@@ -341,7 +282,7 @@ export function ActivityLogsTable({
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search by user, action, or detail"
+                placeholder="Search by user or detail"
                 className="h-10 bg-blue-50/60 pl-9"
               />
             </div>
@@ -404,18 +345,6 @@ export function ActivityLogsTable({
                       </span>
                       <span className="font-medium text-blue-950">{log.user}</span>
                     </div>
-                  </TableCell>
-                  <TableCell className="px-5 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide ring-1 ${actionClass(log.action)}`}
-                    >
-                      {log.action}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-5 py-3">
-                    <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200">
-                      {log.area}
-                    </span>
                   </TableCell>
                   <TableCell className="px-5 py-3 text-blue-950">{log.detail}</TableCell>
                 </TableRow>

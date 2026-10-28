@@ -235,7 +235,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </header>
         <div className="relative flex min-h-0 w-full flex-1 overflow-hidden">
         {showSidebar ? <SidebarEdgeToggle /> : null}
-        {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-gradient-to-b [&_[data-sidebar=sidebar]]:from-blue-800 [&_[data-sidebar=sidebar]]:via-blue-700 [&_[data-sidebar=sidebar]]:to-sky-600 [&_[data-sidebar=sidebar]]:text-white">
+        {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-gradient-to-r [&_[data-sidebar=sidebar]]:from-blue-800 [&_[data-sidebar=sidebar]]:via-blue-700 [&_[data-sidebar=sidebar]]:to-sky-600 [&_[data-sidebar=sidebar]]:text-white">
           <div className="flex justify-start px-2 pt-3">
             <SidebarPanelToggle />
           </div>
