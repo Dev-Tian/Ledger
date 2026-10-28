@@ -197,6 +197,45 @@ export const apiService = {
     return response.data;
   },
 
+// ADMIN PAYMENT API :
+  getPayments: async (page = 1, search?: string): Promise<unknown> => {
+    const params: { page: number; per_page: number; search?: string } = {
+      page,
+      per_page: 10,
+    };
+    const text = search?.trim();
+    if (text) params.search = text;
+    const response = await api.get("/payments", { params });
+    return response.data;
+  },
+
+  getPayment: async (payment: string | number): Promise<unknown> => {
+    const response = await api.get(`/payments/${encodeURIComponent(String(payment))}`);
+    return response.data;
+  },
+
+  updatePayment: async (
+    payment: string | number,
+    payload: Record<string, unknown>,
+  ): Promise<unknown> => {
+    const response = await api.put(
+      `/payments/${encodeURIComponent(String(payment))}`,
+      payload,
+    );
+    return response.data;
+  },
+
+  voidPayment: async (
+    payment: string | number,
+    reason: string,
+  ): Promise<unknown> => {
+    const response = await api.post(
+      `/payments/${encodeURIComponent(String(payment))}/void`,
+      { reason: reason.trim() },
+    );
+    return response.data;
+  },
+
 // UPLOAD API : Upload Installments
   uploadInstallments: async (rows: UploadRow[], fileName?: string): Promise<unknown> => {
     return postRows("/installments", rows, "Installments uploaded", fileName);
