@@ -27,6 +27,10 @@ const installmentHeaders: Record<string, string> = {
   rebated: "is_rebated",
   item: "item",
   "item unit": "item",
+  "item class": "item_class",
+  item_class: "item_class",
+  "rebate amount": "rebate_amount",
+  rebate_amount: "rebate_amount",
 }
 
 const paymentHeaders: Record<string, string> = {
@@ -53,6 +57,7 @@ const installmentAmounts = new Set([
   "down_payment",
   "financed_amount",
   "loan_amount",
+  "rebate_amount",
 ])
 
 export async function uploadRows(file: File, title: string): Promise<UploadRow[]> {
