@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Ban, Eye, Pencil, RefreshCw, Search } from "lucide-react"
 
 import { LoadingState } from "@/components/loading-state"
-import { SuccessModal } from "@/components/status-modals"
+import { ErrorModal, SuccessModal } from "@/components/status-modals"
 import { TableEmpty } from "@/components/table-empty"
 import { EditPaymentModal } from "@/components/edit-payment-modal"
 import { ViewPaymentModal, type PaymentRemark, type ViewPayment } from "@/components/view-payment-modal"
@@ -242,6 +242,10 @@ export default function AdminPaymentsPage() {
     title: string
     description: string
   } | null>(null)
+  const [errorNotice, setErrorNotice] = useState<{
+    title: string
+    description: string
+  } | null>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -291,39 +295,55 @@ export default function AdminPaymentsPage() {
   }
 
   async function savePayment(next: ViewPayment) {
-    await apiService.updatePayment(next.id, paymentPayload(next))
-    setEditing(null)
-    setViewing((current) => (current?.id === next.id ? next : current))
-    setReloadKey((key) => key + 1)
-    setSuccessNotice({
-      title: "Payment updated",
-      description: `${next.documentNumber} was saved.`,
-    })
+    try {
+      await apiService.updatePayment(next.id, paymentPayload(next))
+      setEditing(null)
+      setViewing((current) => (current?.id === next.id ? next : current))
+      setReloadKey((key) => key + 1)
+      setSuccessNotice({
+        title: "Payment updated",
+        description: `${next.documentNumber} was saved.`,
+      })
+    } catch (failure) {
+      setEditing(null)
+      setErrorNotice({
+        title: "Update failed",
+        description: toApiErrorMessage(failure, "This payment could not be saved."),
+      })
+    }
   }
 
   async function voidPayment(payment: ViewPayment, reason: string) {
-    await apiService.voidPayment(payment.id, reason)
-    const updated: PaymentRow = {
-      ...payment,
-      voided: true,
-      remarks: [
-        {
-          id: `void-${Date.now()}`,
-          action: "voided",
-          by: "Admin",
-          at: remarkWhen.format(new Date()),
-          detail: reason,
-        },
-        ...payment.remarks,
-      ],
+    try {
+      await apiService.voidPayment(payment.id, reason)
+      const updated: PaymentRow = {
+        ...payment,
+        voided: true,
+        remarks: [
+          {
+            id: `void-${Date.now()}`,
+            action: "voided",
+            by: "Admin",
+            at: remarkWhen.format(new Date()),
+            detail: reason,
+          },
+          ...payment.remarks,
+        ],
+      }
+      setVoiding(null)
+      setViewing((current) => (current?.id === updated.id ? updated : current))
+      setReloadKey((key) => key + 1)
+      setSuccessNotice({
+        title: "Payment voided",
+        description: `${payment.documentNumber} was marked void.`,
+      })
+    } catch (failure) {
+      setVoiding(null)
+      setErrorNotice({
+        title: "Void failed",
+        description: toApiErrorMessage(failure, "This payment could not be voided."),
+      })
     }
-    setVoiding(null)
-    setViewing((current) => (current?.id === updated.id ? updated : current))
-    setReloadKey((key) => key + 1)
-    setSuccessNotice({
-      title: "Payment voided",
-      description: `${payment.documentNumber} was marked void.`,
-    })
   }
 
   return (
@@ -577,6 +597,14 @@ export default function AdminPaymentsPage() {
         }}
         title={successNotice?.title ?? ""}
         description={successNotice?.description ?? ""}
+      />
+      <ErrorModal
+        open={errorNotice !== null}
+        onOpenChangeAction={(open) => {
+          if (!open) setErrorNotice(null)
+        }}
+        title={errorNotice?.title ?? ""}
+        description={errorNotice?.description ?? ""}
       />
     </section>
   )
