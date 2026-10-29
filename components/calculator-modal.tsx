@@ -210,6 +210,116 @@ export function CalculatorModal({
     setFresh(true)
   }
 
+  function backspace() {
+    setDisplay((current) => {
+      if (fresh || current === "Error") return current
+      if (current.length <= 1 || (current.startsWith("-") && current.length === 2)) {
+        setFresh(true)
+        return "0"
+      }
+      return current.slice(0, -1)
+    })
+  }
+
+  const keyboardActions = useRef({
+    inputDigit,
+    inputDot,
+    chooseOp,
+    equals,
+    reset,
+    close,
+    applyPercent,
+    toggleSign,
+    backspace,
+  })
+  keyboardActions.current = {
+    inputDigit,
+    inputDot,
+    chooseOp,
+    equals,
+    reset,
+    close,
+    applyPercent,
+    toggleSign,
+    backspace,
+  }
+
+  useEffect(() => {
+    if (!open) return
+
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+
+      const actions = keyboardActions.current
+      const key = event.key
+
+      if (/^[0-9]$/.test(key)) {
+        event.preventDefault()
+        actions.inputDigit(key)
+        return
+      }
+
+      switch (key) {
+        case ".":
+        case ",":
+          event.preventDefault()
+          actions.inputDot()
+          break
+        case "+":
+          event.preventDefault()
+          actions.chooseOp("+")
+          break
+        case "-":
+          event.preventDefault()
+          actions.chooseOp("-")
+          break
+        case "*":
+          event.preventDefault()
+          actions.chooseOp("×")
+          break
+        case "/":
+          event.preventDefault()
+          actions.chooseOp("÷")
+          break
+        case "Enter":
+        case "=":
+          event.preventDefault()
+          actions.equals()
+          break
+        case "Escape":
+          event.preventDefault()
+          actions.close()
+          break
+        case "Backspace":
+          event.preventDefault()
+          actions.backspace()
+          break
+        case "Delete":
+          event.preventDefault()
+          actions.reset()
+          break
+        case "%":
+          event.preventDefault()
+          actions.applyPercent()
+          break
+        default:
+          break
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [open])
+
   const keys: { label: string; onClick: () => void; className?: string }[] = [
     { label: "AC", onClick: reset, className: "bg-blue-100 text-blue-900 hover:bg-blue-200" },
     { label: "+/−", onClick: toggleSign, className: "bg-blue-100 text-blue-900 hover:bg-blue-200" },
