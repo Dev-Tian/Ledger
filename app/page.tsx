@@ -129,7 +129,7 @@ export default function Home() {
                   Sign in
                 </CardTitle>
                 <CardDescription className="text-sm leading-6 text-blue-100">
-                  Use your SMCT account email to open the ledger.
+                  Use your SMCT account to open the ledger.
                 </CardDescription>
               </CardHeader>
             </div>
