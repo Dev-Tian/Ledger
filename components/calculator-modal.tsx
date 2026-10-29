@@ -1,14 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import { Calculator } from "lucide-react"
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
+import { Calculator, GripHorizontal, X } from "lucide-react"
+import { createPortal } from "react-dom"
 
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 
 type Op = "+" | "-" | "×" | "÷"
@@ -38,8 +33,16 @@ function calculate(left: number, right: number, op: Op) {
 
 function trimResult(value: number) {
   if (!Number.isFinite(value)) return "Error"
-  const text = String(Number(value.toPrecision(12)))
-  return text
+  return String(Number(value.toPrecision(12)))
+}
+
+function clampPosition(x: number, y: number, width: number, height: number) {
+  const maxX = Math.max(8, window.innerWidth - width - 8)
+  const maxY = Math.max(8, window.innerHeight - height - 8)
+  return {
+    x: Math.min(Math.max(8, x), maxX),
+    y: Math.min(Math.max(8, y), maxY),
+  }
 }
 
 export function CalculatorModal({
@@ -49,16 +52,88 @@ export function CalculatorModal({
   open: boolean
   onOpenChangeAction: (open: boolean) => void
 }) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const dragOffset = useRef({ x: 0, y: 0 })
+  const draggingRef = useRef(false)
+  const [mounted, setMounted] = useState(false)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [dragging, setDragging] = useState(false)
   const [display, setDisplay] = useState("0")
   const [stored, setStored] = useState<number | null>(null)
   const [pendingOp, setPendingOp] = useState<Op | null>(null)
   const [fresh, setFresh] = useState(true)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const width = 320
+    const height = 460
+    setPosition(
+      clampPosition(
+        window.innerWidth - width - 28,
+        window.innerHeight - height - 120,
+        width,
+        height,
+      ),
+    )
+  }, [open])
+
+  useEffect(() => {
+    function onPointerMove(event: PointerEvent) {
+      if (!draggingRef.current) return
+      const panel = panelRef.current
+      const width = panel?.offsetWidth ?? 320
+      const height = panel?.offsetHeight ?? 460
+      setPosition(
+        clampPosition(
+          event.clientX - dragOffset.current.x,
+          event.clientY - dragOffset.current.y,
+          width,
+          height,
+        ),
+      )
+    }
+
+    function onPointerUp() {
+      if (!draggingRef.current) return
+      draggingRef.current = false
+      setDragging(false)
+    }
+
+    window.addEventListener("pointermove", onPointerMove)
+    window.addEventListener("pointerup", onPointerUp)
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove)
+      window.removeEventListener("pointerup", onPointerUp)
+    }
+  }, [])
 
   function reset() {
     setDisplay("0")
     setStored(null)
     setPendingOp(null)
     setFresh(true)
+  }
+
+  function close() {
+    reset()
+    onOpenChangeAction(false)
+  }
+
+  function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return
+    const panel = panelRef.current
+    if (!panel) return
+    const box = panel.getBoundingClientRect()
+    dragOffset.current = {
+      x: event.clientX - box.left,
+      y: event.clientY - box.top,
+    }
+    draggingRef.current = true
+    setDragging(true)
   }
 
   function inputDigit(digit: string) {
@@ -157,64 +232,78 @@ export function CalculatorModal({
     { label: "=", onClick: equals, className: "bg-blue-800 text-white hover:bg-blue-900" },
   ]
 
-  return (
-    <AlertDialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) reset()
-        onOpenChangeAction(next)
-      }}
+  if (!mounted || !open) return null
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-label="Calculator"
+      className="fixed z-50 w-[min(20rem,calc(100vw-1rem))] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-blue-200"
+      style={{ left: position.x, top: position.y }}
     >
-      <AlertDialogContent className="w-[min(22rem,calc(100%-2rem))] max-w-none! gap-0 overflow-hidden p-0 shadow-lg ring-blue-200 sm:max-w-none!">
-        <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-sky-600 px-5 py-4 text-white">
-          <AlertDialogTitle className="flex items-center gap-2 text-lg">
-            <Calculator className="size-5" aria-hidden />
-            Calculator
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-sm text-blue-100">
-            Quick math while you work the ledger.
-          </AlertDialogDescription>
-        </div>
-        <div className="bg-white px-4 pt-4">
-          <div className="mb-3 rounded-xl bg-blue-50 px-4 py-5 text-right ring-1 ring-blue-100">
-            <p className="min-h-8 truncate text-3xl font-semibold tracking-tight text-blue-950 tabular-nums">
-              {formatDisplay(display)}
-            </p>
-            <p className="mt-1 text-xs text-blue-700/70">
-              {pendingOp && stored != null ? `${formatDisplay(String(stored))} ${pendingOp}` : " "}
-            </p>
+      <div
+        className={`flex cursor-grab items-start justify-between gap-3 bg-gradient-to-r from-blue-800 via-blue-700 to-sky-600 px-4 py-3 text-white select-none active:cursor-grabbing ${
+          dragging ? "cursor-grabbing" : ""
+        }`}
+        onPointerDown={startDrag}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <GripHorizontal className="size-4 opacity-70" aria-hidden />
+            <Calculator className="size-4" aria-hidden />
+            <p className="text-sm font-semibold">Calculator</p>
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            {keys.map((key) => (
-              <Button
-                key={key.label}
-                type="button"
-                className={`h-12 cursor-pointer rounded-xl text-base font-semibold ${
-                  key.className ?? "bg-white text-blue-950 ring-1 ring-blue-100 hover:bg-blue-50"
-                }`}
-                onClick={key.onClick}
-              >
-                {key.label}
-              </Button>
-            ))}
-          </div>
+          <p className="mt-1 text-xs text-blue-100">Drag to move around the dashboard.</p>
         </div>
-        <div className="flex justify-end border-t border-blue-100 bg-blue-50/80 px-4 py-3">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="cursor-pointer bg-white px-4 text-blue-950"
-            onClick={() => {
-              reset()
-              onOpenChangeAction(false)
-            }}
-          >
-            Close
-          </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          aria-label="Close calculator"
+          className="cursor-pointer bg-white/15 text-white hover:bg-white/25"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={close}
+        >
+          <X className="size-3.5" aria-hidden />
+        </Button>
+      </div>
+      <div className="bg-white px-3 pt-3">
+        <div className="mb-3 rounded-xl bg-blue-50 px-3 py-4 text-right ring-1 ring-blue-100">
+          <p className="min-h-8 truncate text-3xl font-semibold tracking-tight text-blue-950 tabular-nums">
+            {formatDisplay(display)}
+          </p>
+          <p className="mt-1 text-xs text-blue-700/70">
+            {pendingOp && stored != null ? `${formatDisplay(String(stored))} ${pendingOp}` : " "}
+          </p>
         </div>
-      </AlertDialogContent>
-    </AlertDialog>
+        <div className="grid grid-cols-4 gap-2 pb-3">
+          {keys.map((key) => (
+            <Button
+              key={key.label}
+              type="button"
+              className={`h-11 cursor-pointer rounded-xl text-base font-semibold ${
+                key.className ?? "bg-white text-blue-950 ring-1 ring-blue-100 hover:bg-blue-50"
+              }`}
+              onClick={key.onClick}
+            >
+              {key.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div className="flex justify-end border-t border-blue-100 bg-blue-50/80 px-3 py-2.5">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="cursor-pointer bg-white px-4 text-blue-950"
+          onClick={close}
+        >
+          Close
+        </Button>
+      </div>
+    </div>,
+    document.body,
   )
 }
 
