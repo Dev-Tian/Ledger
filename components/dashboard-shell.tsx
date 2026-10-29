@@ -82,6 +82,18 @@ const roleLabel: Record<DashboardRole, string> = {
   viewer: "Viewer",
 }
 
+function sidebarFooterIcon(pathname: string) {
+  if (pathname.includes("/users")) return "/group.png"
+  if (pathname.includes("/accounts") || pathname.includes("/account-ledger")) {
+    return "/budget.png"
+  }
+  if (pathname.includes("/branches")) return "/worldwide.png"
+  if (pathname.includes("/cust-payment") || pathname.includes("/payment")) {
+    return "/billing.png"
+  }
+  return "/insurance.png"
+}
+
 function HeaderClock() {
   const [now, setNow] = useState<Date | null>(null)
 
@@ -265,14 +277,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </SidebarGroup>
           </SidebarContent>
           <div className="pointer-events-none mt-auto flex justify-center px-4 pb-6">
-            <Image
-              src="/insurance.png"
-              alt=""
-              width={512}
-              height={512}
-              className="h-28 w-28 opacity-30"
-              style={{ width: "7rem", height: "7rem" }}
-            />
+            <div key={sidebarFooterIcon(pathname)} className="animate-sidebar-nav-in">
+              <div style={{ opacity: 0.35 }}>
+                <Image
+                  src={sidebarFooterIcon(pathname)}
+                  alt=""
+                  width={512}
+                  height={512}
+                  className="h-28 w-28 brightness-0 invert"
+                  style={{ width: "7rem", height: "7rem" }}
+                />
+              </div>
+            </div>
           </div>
         </Sidebar> : null}
         <SidebarInset className="min-h-0 min-w-0 overflow-y-auto bg-blue-50">
