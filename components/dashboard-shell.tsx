@@ -164,6 +164,48 @@ function SidebarEdgeToggle() {
   )
 }
 
+function SidebarNavMenu({
+  items,
+  pathname,
+}: {
+  items: NavItem[]
+  pathname: string
+}) {
+  const { state, isMobile, openMobile } = useSidebar()
+  const open = isMobile ? openMobile : state === "expanded"
+  const [animKey, setAnimKey] = useState(0)
+  const wasOpen = useRef(open)
+
+  useEffect(() => {
+    if (open && !wasOpen.current) setAnimKey((key) => key + 1)
+    wasOpen.current = open
+  }, [open])
+
+  return (
+    <SidebarMenu key={animKey} className="gap-1">
+      {items.map((item, index) => (
+        <SidebarMenuItem
+          key={item.href}
+          className="animate-sidebar-nav-in"
+          style={{ animationDelay: `${160 + index * 110}ms` }}
+        >
+          <SidebarMenuButton
+            asChild
+            isActive={pathname === item.href}
+            tooltip={item.label}
+            className="h-10 w-[calc(100%-0.5rem)] rounded-lg px-3 text-white transition-[width,transform,background-color,box-shadow,color,border-radius] duration-200 ease-out hover:w-[calc(100%-1.25rem)] hover:translate-x-1 hover:bg-white/15 hover:text-white hover:shadow-md data-active:w-full data-active:translate-x-0 data-active:rounded-r-none data-active:bg-white data-active:pr-4 data-active:font-semibold data-active:text-blue-800 data-active:shadow-none data-active:hover:w-full data-active:hover:translate-x-0 data-active:hover:bg-white data-active:hover:text-blue-800 data-active:hover:shadow-none"
+          >
+            <Link href={item.href}>
+              <item.icon />
+              <span>{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  )
+}
+
 function roleFromPath(pathname: string): DashboardRole {
   if (pathname.startsWith("/admin")) return "admin"
   if (pathname.startsWith("/uploader")) return "uploader"
@@ -289,27 +331,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
           <SidebarContent className="overflow-x-visible py-4 pr-0 pl-2">
             <SidebarGroup className="p-0">
-              <SidebarMenu className="gap-1">
-                {items.map((item, index) => (
-                  <SidebarMenuItem
-                    key={item.href}
-                    className="animate-sidebar-nav-in"
-                    style={{ animationDelay: `${160 + index * 110}ms` }}
-                  >
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === item.href}
-                      tooltip={item.label}
-                      className="h-10 w-[calc(100%-0.5rem)] rounded-lg px-3 text-white transition-[width,transform,background-color,box-shadow,color,border-radius] duration-200 ease-out hover:w-[calc(100%-1.25rem)] hover:translate-x-1 hover:bg-white/15 hover:text-white hover:shadow-md data-active:w-full data-active:translate-x-0 data-active:rounded-r-none data-active:bg-white data-active:pr-4 data-active:font-semibold data-active:text-blue-800 data-active:shadow-none data-active:hover:w-full data-active:hover:translate-x-0 data-active:hover:bg-white data-active:hover:text-blue-800 data-active:hover:shadow-none"
-                    >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
+              <SidebarNavMenu items={items} pathname={pathname} />
             </SidebarGroup>
           </SidebarContent>
           <div className="pointer-events-none mt-auto flex justify-center px-4 pb-6">

@@ -1,6 +1,6 @@
 "use client";
 
-import { LockKeyhole, Mail } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 
@@ -18,6 +18,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
   const [loadingOpen, setLoadingOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const checkId = useRef(0);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -100,13 +101,26 @@ export function LoginForm() {
           <Input
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             placeholder="Enter your password"
             aria-invalid={error ? true : undefined}
-            className="h-12 rounded-xl border-blue-100 bg-white pr-3 pl-11 shadow-sm focus-visible:border-blue-700 focus-visible:ring-blue-200"
+            className="h-12 rounded-xl border-blue-100 bg-white pr-12 pl-11 shadow-sm focus-visible:border-blue-700 focus-visible:ring-blue-200"
             required
           />
+          <button
+            type="button"
+            className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-md p-1.5 text-blue-700 transition hover:bg-blue-50 hover:text-blue-900"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+            onClick={() => setShowPassword((open) => !open)}
+          >
+            {showPassword ? (
+              <EyeOff className="size-4" aria-hidden />
+            ) : (
+              <Eye className="size-4" aria-hidden />
+            )}
+          </button>
         </div>
       </div>
       <LoadingModal
