@@ -235,20 +235,24 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </header>
         <div className="relative flex min-h-0 w-full flex-1 overflow-hidden">
         {showSidebar ? <SidebarEdgeToggle /> : null}
-        {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! [&_[data-sidebar=sidebar]]:bg-gradient-to-r [&_[data-sidebar=sidebar]]:from-blue-800 [&_[data-sidebar=sidebar]]:via-blue-700 [&_[data-sidebar=sidebar]]:to-sky-600 [&_[data-sidebar=sidebar]]:text-white">
+        {showSidebar ? <Sidebar className="absolute! top-0! bottom-0! h-auto! border-r-0! [&_[data-sidebar=sidebar]]:bg-gradient-to-r [&_[data-sidebar=sidebar]]:from-blue-800 [&_[data-sidebar=sidebar]]:via-blue-700 [&_[data-sidebar=sidebar]]:to-sky-600 [&_[data-sidebar=sidebar]]:text-white">
           <div className="flex justify-start px-2 pt-3">
             <SidebarPanelToggle />
           </div>
-          <SidebarContent className="px-2 py-4">
+          <SidebarContent className="overflow-x-visible py-4 pr-0 pl-2">
             <SidebarGroup className="p-0">
               <SidebarMenu className="gap-1">
-                {items.map((item) => (
-                  <SidebarMenuItem key={item.href}>
+                {items.map((item, index) => (
+                  <SidebarMenuItem
+                    key={item.href}
+                    className="animate-sidebar-nav-in"
+                    style={{ animationDelay: `${160 + index * 110}ms` }}
+                  >
                     <SidebarMenuButton
                       asChild
                       isActive={pathname === item.href}
                       tooltip={item.label}
-                      className="h-10 rounded-lg px-3 text-white hover:bg-white/15 hover:text-white data-active:bg-white data-active:font-semibold data-active:text-blue-800"
+                      className="h-10 w-[calc(100%-0.5rem)] rounded-lg px-3 text-white transition-[width,transform,background-color,box-shadow,color,border-radius] duration-200 ease-out hover:w-[calc(100%-1.25rem)] hover:translate-x-1 hover:bg-white/15 hover:text-white hover:shadow-md data-active:w-full data-active:translate-x-0 data-active:rounded-r-none data-active:bg-white data-active:pr-4 data-active:font-semibold data-active:text-blue-800 data-active:shadow-none data-active:hover:w-full data-active:hover:translate-x-0 data-active:hover:bg-white data-active:hover:text-blue-800 data-active:hover:shadow-none"
                     >
                       <Link href={item.href}>
                         <item.icon />
