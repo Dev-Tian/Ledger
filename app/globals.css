@@ -241,6 +241,63 @@
   animation: sidebar-nav-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes tool-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tool-bubble-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(22px) scale(0.55);
+  }
+}
+
+@keyframes tool-toggle-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(0.86);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-tool-bubble-in {
+  animation: tool-bubble-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-tool-bubble-out {
+  animation: tool-bubble-out 360ms ease-in both;
+}
+
+.animate-tool-toggle-pop {
+  animation: tool-toggle-pop 280ms ease;
+}
+
+.tool-bubble {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    background-color 200ms ease;
+}
+
+.tool-bubble:hover {
+  transform: translateY(-3px) scale(1.06);
+}
+
 .status-check-ring,
 .status-error-ring {
   stroke-dasharray: 88;

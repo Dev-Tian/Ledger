@@ -3,12 +3,13 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useEffect, useState, type CSSProperties } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import {
   BookOpen,
   Building2,
   Clock,
   LayoutDashboard,
+  MessageCircle,
   Receipt,
   ScrollText,
   Settings,
@@ -17,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { CalculatorBubbleButton } from "@/components/calculator-modal"
 import { InfoModalTrigger } from "@/components/info-modal"
 import { ProfileSettingsModal } from "@/components/profile-settings-modal"
 import { useUser } from "@/contexts/UserContext"
@@ -35,7 +37,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { TooltipProvider } from "@/components/ui/tooltip"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export type DashboardRole = "admin" | "uploader" | "employee" | "viewer"
 
@@ -91,6 +98,8 @@ function sidebarFooterIcon(pathname: string) {
   if (pathname.includes("/cust-payment") || pathname.includes("/payment")) {
     return "/billing.png"
   }
+  if (pathname.includes("/activity-logs")) return "/graph.png"
+  // Overview (/admin, /uploader, etc.)
   return "/insurance.png"
 }
 
@@ -180,6 +189,33 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const items = navItems(role)
   const showSidebar = !pathname.includes("/account-ledger")
   const [profileOpen, setProfileOpen] = useState(false)
+  const [assistanceBubbleOpen, setAssistanceBubbleOpen] = useState(true)
+  const [assistanceBubbleLeaving, setAssistanceBubbleLeaving] = useState(false)
+  const [togglePopKey, setTogglePopKey] = useState(0)
+  const showAssistanceBubbles = assistanceBubbleOpen || assistanceBubbleLeaving
+  const leaveTimer = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (leaveTimer.current != null) window.clearTimeout(leaveTimer.current)
+    }
+  }, [])
+
+  function toggleAssistanceBubbles() {
+    setTogglePopKey((key) => key + 1)
+    if (assistanceBubbleOpen) {
+      setAssistanceBubbleLeaving(true)
+      if (leaveTimer.current != null) window.clearTimeout(leaveTimer.current)
+      leaveTimer.current = window.setTimeout(() => {
+        setAssistanceBubbleOpen(false)
+        setAssistanceBubbleLeaving(false)
+        leaveTimer.current = null
+      }, 380)
+      return
+    }
+    setAssistanceBubbleLeaving(false)
+    setAssistanceBubbleOpen(true)
+  }
 
   return (
     <TooltipProvider>
@@ -193,7 +229,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         className="h-svh overflow-hidden bg-blue-50"
         style={{ "--sidebar-width": "13rem" } as CSSProperties}
       >
-        <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+        <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
         <header className="z-20 flex h-16 w-full shrink-0 items-center gap-3 border-b bg-white px-4">
           <div className="flex items-center gap-3">
             <Image
@@ -228,7 +264,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   type="button"
                   size="icon-sm"
                   aria-label="Profile settings"
-                  className="bg-blue-800 text-white hover:bg-blue-900 cursor-pointer"
+                  className="cursor-pointer bg-blue-800 text-white hover:bg-blue-900"
                   onClick={() => setProfileOpen(true)}
                 >
                   <Settings />
@@ -236,7 +272,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 <Button
                   type="button"
                   size="sm"
-                  className="bg-red-500 px-3 text-white hover:bg-red-700 cursor-pointer"
+                  className="cursor-pointer bg-red-500 px-3 text-white hover:bg-red-700"
                   onClick={() => void logout()}
                 >
                   Logout
@@ -278,7 +314,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </SidebarContent>
           <div className="pointer-events-none mt-auto flex justify-center px-4 pb-6">
             <div key={sidebarFooterIcon(pathname)} className="animate-sidebar-nav-in">
-              <div style={{ opacity: 0.35 }}>
+              <div style={{ opacity: 0.5 }}>
                 <Image
                   src={sidebarFooterIcon(pathname)}
                   alt=""
@@ -330,20 +366,62 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <InfoModalTrigger
-                topic="help"
-                className="bg-white/15 text-white hover:bg-white/25"
-              >
-                Assistance
-              </InfoModalTrigger>
-              <p className="text-xs text-blue-100">
-                Signed in as{" "}
-                <span className="font-medium text-white">{signedInLabel}</span>
-              </p>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  key={togglePopKey}
+                  type="button"
+                  size="icon-sm"
+                  className="animate-tool-toggle-pop cursor-pointer bg-white/15 text-white hover:bg-white/25"
+                  aria-label={assistanceBubbleOpen ? "Hide assistance" : "Show assistance"}
+                  aria-pressed={assistanceBubbleOpen}
+                  onClick={toggleAssistanceBubbles}
+                >
+                  <MessageCircle className="size-3.5" aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {assistanceBubbleOpen ? "Hide assistance" : "Show assistance"}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </footer>
+        {showAssistanceBubbles ? (
+          <div
+            key={assistanceBubbleLeaving ? "bubbles-out" : "bubbles-in"}
+            className="pointer-events-none absolute right-4 bottom-20 z-40 flex flex-col items-end gap-4 overflow-visible sm:right-6 sm:bottom-24"
+          >
+            <div
+              className={`pointer-events-auto group/bubble flex flex-col items-center gap-1 ${
+                assistanceBubbleLeaving ? "animate-tool-bubble-out" : "animate-tool-bubble-in"
+              }`}
+              style={{ animationDelay: assistanceBubbleLeaving ? "70ms" : "0ms" }}
+            >
+              <CalculatorBubbleButton className="tool-bubble size-14 cursor-pointer rounded-full bg-gradient-to-br from-blue-800 to-blue-600 text-white shadow-[0_10px_24px_rgb(30_64_175_/_0.35)] ring-2 ring-white/40 hover:from-blue-900 hover:to-blue-700" />
+              <span className="pointer-events-none rounded-full bg-blue-950/70 px-2 py-0.5 text-[10px] font-medium tracking-wide text-white opacity-0 backdrop-blur-sm transition duration-200 group-hover/bubble:opacity-100">
+                Calculator
+              </span>
+            </div>
+            <div
+              className={`pointer-events-auto group/bubble flex flex-col items-center gap-1 ${
+                assistanceBubbleLeaving ? "animate-tool-bubble-out" : "animate-tool-bubble-in"
+              }`}
+              style={{ animationDelay: assistanceBubbleLeaving ? "0ms" : "100ms" }}
+            >
+              <InfoModalTrigger
+                topic="help"
+                size="default"
+                className="tool-bubble size-14 cursor-pointer rounded-full bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-[0_10px_24px_rgb(14_165_233_/_0.35)] ring-2 ring-white/40 hover:from-sky-600 hover:to-cyan-600"
+              >
+                <span className="sr-only">Assistance</span>
+                <MessageCircle className="size-5" aria-hidden />
+              </InfoModalTrigger>
+              <span className="pointer-events-none rounded-full bg-blue-950/70 px-2 py-0.5 text-[10px] font-medium tracking-wide text-white opacity-0 backdrop-blur-sm transition duration-200 group-hover/bubble:opacity-100">
+                Assistance
+              </span>
+            </div>
+          </div>
+        ) : null}
         </div>
       </SidebarProvider>
     </TooltipProvider>
