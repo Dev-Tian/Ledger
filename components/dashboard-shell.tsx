@@ -314,7 +314,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </SidebarContent>
           <div className="pointer-events-none mt-auto flex justify-center px-4 pb-6">
             <div key={sidebarFooterIcon(pathname)} className="animate-sidebar-nav-in">
-              <div style={{ opacity: 0.5 }}>
+              <div style={{ opacity: 0.72 }}>
                 <Image
                   src={sidebarFooterIcon(pathname)}
                   alt=""

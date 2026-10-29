@@ -114,35 +114,54 @@ function readRemarks(value: unknown): PaymentRemark[] {
   })
 }
 
+function installmentOf(value: unknown) {
+  if (!value || typeof value !== "object") return null
+  return value as { customer_name?: unknown; so_number?: unknown; name?: unknown }
+}
+
 function readPayment(item: unknown): PaymentRow | null {
   if (!item || typeof item !== "object") return null
   const row = item as Record<string, unknown>
   const id = textOf(row.id)
   if (!id) return null
+  const installment = installmentOf(row.installment)
   const voided =
     row.voided === true ||
     row.is_voided === true ||
     row.voided === 1 ||
     textOf(row.status).toLowerCase() === "voided"
-  const rebate = textOf(row.eligible_for_rebate)
+  const rebateRaw =
+    textOf(row.eligible_for_rebate) ||
+    textOf(row.isrebatable) ||
+    textOf(row.is_rebatable)
+  const rebate = rebateRaw.toLowerCase()
+  const dateRaw = textOf(row.payment_date) || textOf(row.date)
   return {
     id,
     documentNumber: textOf(row.document_number) || "—",
-    date: formatDate(textOf(row.date)) || textOf(row.date) || "—",
-    name: textOf(row.name) || "—",
+    date: formatDate(dateRaw) || dateRaw || "—",
+    name:
+      textOf(installment?.customer_name) ||
+      textOf(installment?.name) ||
+      textOf(row.name) ||
+      textOf(row.customer_name) ||
+      "—",
     orNumber: textOf(row.or_number),
-    maximumOfAmount: Number(row.maximum_of_amount) || 0,
-    memoMain: textOf(row.memo_main),
+    maximumOfAmount: Number(row.amount ?? row.maximum_of_amount) || 0,
+    memoMain: textOf(row.memo_description) || textOf(row.memo_main),
     minimumSalesOrderNumber:
+      textOf(installment?.so_number) ||
       textOf(row.minimum_sales_order_number) ||
-      textOf(row.minimum_sales_order_number_for_dp),
-    minimumInvoiceNumberLeasing: textOf(row.minimum_invoice_number_leasing),
+      textOf(row.minimum_sales_order_number_for_dp) ||
+      textOf(row.so_number),
+    minimumInvoiceNumberLeasing:
+      textOf(row.invoice_number) || textOf(row.minimum_invoice_number_leasing),
     eligibleForRebate:
-      rebate.toLowerCase() === "yes" || rebate === "1"
+      rebate === "yes" || rebate === "1"
         ? "Yes"
-        : rebate.toLowerCase() === "no" || rebate === "0"
+        : rebate === "no" || rebate === "0"
           ? "No"
-          : rebate,
+          : rebateRaw,
     genericCollector: textOf(row.generic_collector),
     location: locationOf(row.location),
     voided: voided || undefined,
@@ -184,14 +203,17 @@ function readPaymentPage(payload: unknown, count: number) {
 function paymentPayload(payment: ViewPayment): Record<string, unknown> {
   return {
     document_number: payment.documentNumber,
-    date: payment.date,
-    name: payment.name,
+    payment_date: payment.date,
     or_number: payment.orNumber,
-    maximum_of_amount: payment.maximumOfAmount,
-    memo_main: payment.memoMain,
-    minimum_sales_order_number_for_dp: payment.minimumSalesOrderNumber,
-    minimum_invoice_number_leasing: payment.minimumInvoiceNumberLeasing,
-    eligible_for_rebate: payment.eligibleForRebate,
+    amount: payment.maximumOfAmount,
+    memo_description: payment.memoMain,
+    invoice_number: payment.minimumInvoiceNumberLeasing,
+    isrebatable:
+      payment.eligibleForRebate.toLowerCase() === "yes"
+        ? 1
+        : payment.eligibleForRebate.toLowerCase() === "no"
+          ? 0
+          : payment.eligibleForRebate,
     generic_collector: payment.genericCollector,
     location: payment.location,
   }
