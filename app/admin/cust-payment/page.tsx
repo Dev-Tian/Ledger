@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Ban, Eye, Pencil, RefreshCw, Search } from "lucide-react"
 
 import { LoadingState } from "@/components/loading-state"
+import { SuccessModal } from "@/components/status-modals"
 import { TableEmpty } from "@/components/table-empty"
 import { EditPaymentModal } from "@/components/edit-payment-modal"
 import { ViewPaymentModal, type PaymentRemark, type ViewPayment } from "@/components/view-payment-modal"
@@ -237,6 +238,10 @@ export default function AdminPaymentsPage() {
   const [viewing, setViewing] = useState<PaymentRow | null>(null)
   const [editing, setEditing] = useState<PaymentRow | null>(null)
   const [voiding, setVoiding] = useState<PaymentRow | null>(null)
+  const [successNotice, setSuccessNotice] = useState<{
+    title: string
+    description: string
+  } | null>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -290,6 +295,10 @@ export default function AdminPaymentsPage() {
     setEditing(null)
     setViewing((current) => (current?.id === next.id ? next : current))
     setReloadKey((key) => key + 1)
+    setSuccessNotice({
+      title: "Payment updated",
+      description: `${next.documentNumber} was saved.`,
+    })
   }
 
   async function voidPayment(payment: ViewPayment, reason: string) {
@@ -311,6 +320,10 @@ export default function AdminPaymentsPage() {
     setVoiding(null)
     setViewing((current) => (current?.id === updated.id ? updated : current))
     setReloadKey((key) => key + 1)
+    setSuccessNotice({
+      title: "Payment voided",
+      description: `${payment.documentNumber} was marked void.`,
+    })
   }
 
   return (
@@ -556,6 +569,14 @@ export default function AdminPaymentsPage() {
           if (!open) setVoiding(null)
         }}
         onVoidedAction={voidPayment}
+      />
+      <SuccessModal
+        open={successNotice !== null}
+        onOpenChangeAction={(open) => {
+          if (!open) setSuccessNotice(null)
+        }}
+        title={successNotice?.title ?? ""}
+        description={successNotice?.description ?? ""}
       />
     </section>
   )

@@ -6,6 +6,7 @@ import { Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react"
 import { AddUserModal } from "@/components/add-user-modal"
 import { BranchCodeCombobox } from "@/components/branch-code-combobox"
 import { ModalError } from "@/components/modal-error"
+import { SuccessModal } from "@/components/status-modals"
 import { TableEmpty } from "@/components/table-empty"
 import { UpdateUserModal } from "@/components/update-user-modal"
 import {
@@ -135,6 +136,10 @@ export default function AdminUsersPage() {
   const [removing, setRemoving] = useState(false)
   const [deleteError, setDeleteError] = useState("")
   const [error, setError] = useState("")
+  const [successNotice, setSuccessNotice] = useState<{
+    title: string
+    description: string
+  } | null>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -193,9 +198,17 @@ export default function AdminUsersPage() {
     setDeleteError("")
     try {
       const removedId = deletingUser.id
+      const removedName =
+        deletingUser.name?.trim() ||
+        [deletingUser.fname, deletingUser.lname].filter(Boolean).join(" ").trim() ||
+        "User"
       await apiService.deleteUser(removedId)
       setDeletingUser(null)
       setLeavingId(removedId)
+      setSuccessNotice({
+        title: "User deleted",
+        description: `${removedName} was removed from the ledger.`,
+      })
       window.setTimeout(() => {
         setUsers((current) => current.filter((user) => user.id !== removedId))
         setLeavingId(null)
@@ -486,7 +499,21 @@ export default function AdminUsersPage() {
         onOpenChangeAction={(open) => {
           if (!open) setEditing(null)
         }}
-        onUpdatedAction={refresh}
+        onUpdatedAction={() => {
+          refresh()
+          setSuccessNotice({
+            title: "User updated",
+            description: "The account details were saved.",
+          })
+        }}
+      />
+      <SuccessModal
+        open={successNotice !== null}
+        onOpenChangeAction={(open) => {
+          if (!open) setSuccessNotice(null)
+        }}
+        title={successNotice?.title ?? ""}
+        description={successNotice?.description ?? ""}
       />
     </section>
   )
