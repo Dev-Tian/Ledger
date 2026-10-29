@@ -69,7 +69,7 @@ export function LoginForm() {
     <form className="flex flex-col gap-5" onSubmit={onSubmit} noValidate>
       <div className="flex flex-col gap-2">
         <Label htmlFor="email" className="text-xs font-medium tracking-wide text-blue-950">
-          Email
+          Username
         </Label>
         <div className="relative">
           <Mail
@@ -79,9 +79,9 @@ export function LoginForm() {
           <Input
             id="email"
             name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="name@smctgroup.ph"
+            type="text"
+            autoComplete="username"
+            placeholder="Enter your username"
             aria-invalid={error ? true : undefined}
             className="h-12 rounded-xl border-blue-100 bg-white pr-3 pl-11 shadow-sm focus-visible:border-blue-700 focus-visible:ring-blue-200"
             required
