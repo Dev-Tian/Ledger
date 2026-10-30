@@ -36,7 +36,6 @@ const columns = [
   "Name",
   "OR number",
   "Maximum of amount",
-  "Memo (main)",
   "Minimum of sales order number",
   "Actions",
 ]
@@ -462,9 +461,6 @@ export default function AdminPaymentsPage() {
                     </TableCell>
                     <TableCell className="px-5 py-3 tabular-nums text-blue-950">
                       {peso.format(payment.maximumOfAmount)}
-                    </TableCell>
-                    <TableCell className="px-5 py-3 text-blue-950/80">
-                      {payment.memoMain || "—"}
                     </TableCell>
                     <TableCell className="px-5 py-3">
                       <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200">
