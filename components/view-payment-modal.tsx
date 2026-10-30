@@ -11,28 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-
-const columns = [
-  "Document number",
-  "Date",
-  "Name",
-  "OR number",
-  "Maximum of amount",
-  "Memo (main)",
-  "Minimum of sales order number",
-  "Minimum of invoice number - leasing",
-  "Eligible for rebate",
-  "Generic collector",
-  "Location",
-]
+import { Input } from "@/components/ui/input"
 
 const peso = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -62,6 +41,33 @@ export type ViewPayment = {
   location: string
   voided?: boolean
   remarks: PaymentRemark[]
+}
+
+function ReadField({
+  label,
+  value,
+  className,
+  inputClassName,
+}: {
+  label: string
+  value: string
+  className?: string
+  inputClassName?: string
+}) {
+  return (
+    <label className={className ?? "flex flex-col gap-1.5"}>
+      <span className="text-sm font-semibold text-blue-950">{label}</span>
+      <Input
+        readOnly
+        tabIndex={-1}
+        value={value}
+        className={
+          inputClassName ??
+          "h-10 cursor-default bg-blue-50/60 text-blue-950 shadow-none focus-visible:ring-0"
+        }
+      />
+    </label>
+  )
 }
 
 export function ViewPaymentModal({
@@ -107,75 +113,52 @@ export function ViewPaymentModal({
             </div>
           ) : (
             <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-              <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto px-6 py-5">
-                <div className="rounded-xl bg-white/90 shadow-md ring-1 ring-blue-200">
-                  <Table>
-                    <TableHeader className="bg-blue-50 text-blue-950">
-                      <TableRow>
-                        {columns.map((column) => (
-                          <TableHead
-                            key={column}
-                            className="h-11 px-4 text-xs font-semibold tracking-wide whitespace-nowrap text-blue-800 uppercase"
-                          >
-                            {column}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {payment ? (
-                        <TableRow>
-                          <TableCell className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200">
-                              {payment.documentNumber}
-                            </span>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap text-blue-950/80">
-                            {payment.date}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap font-medium text-blue-950">
-                            {payment.name}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-sky-800 ring-1 ring-sky-200">
-                              {payment.orNumber || "—"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap tabular-nums text-blue-950">
-                            {peso.format(payment.maximumOfAmount)}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap text-blue-950/80">
-                            {payment.memoMain || "—"}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200">
-                              {payment.minimumSalesOrderNumber || "—"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap text-blue-950/80">
-                            {payment.minimumInvoiceNumberLeasing || "—"}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap">
-                            <span
-                              className={
-                                payment.eligibleForRebate.toLowerCase() === "yes"
-                                  ? "inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-sky-800 ring-1 ring-sky-200"
-                                  : "inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold tracking-wide text-blue-800 ring-1 ring-blue-200"
-                              }
-                            >
-                              {payment.eligibleForRebate || "—"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap text-blue-950/80">
-                            {payment.genericCollector || "—"}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap text-blue-950/80">
-                            {payment.location || "—"}
-                          </TableCell>
-                        </TableRow>
-                      ) : null}
-                    </TableBody>
-                  </Table>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                  <ReadField
+                    label="Document number"
+                    value={payment?.documentNumber || "—"}
+                  />
+                  <ReadField label="Date" value={payment?.date || "—"} />
+                  <ReadField
+                    label="Name"
+                    value={payment?.name || "—"}
+                    className="flex flex-col gap-1.5 sm:col-span-2"
+                  />
+                  <ReadField label="OR number" value={payment?.orNumber || "—"} />
+                  <ReadField
+                    label="Maximum of amount"
+                    value={
+                      payment ? peso.format(payment.maximumOfAmount) : "—"
+                    }
+                    inputClassName="h-10 cursor-default bg-blue-50/60 text-blue-950 tabular-nums shadow-none focus-visible:ring-0"
+                  />
+                  <ReadField
+                    label="Memo (main)"
+                    value={payment?.memoMain || "—"}
+                    className="flex flex-col gap-1.5 sm:col-span-2"
+                  />
+                  <ReadField
+                    label="Minimum of sales order number"
+                    value={payment?.minimumSalesOrderNumber || "—"}
+                  />
+                  <ReadField
+                    label="Minimum of invoice number - leasing"
+                    value={payment?.minimumInvoiceNumberLeasing || "—"}
+                  />
+                  <ReadField
+                    label="Eligible for rebate"
+                    value={payment?.eligibleForRebate || "—"}
+                  />
+                  <ReadField
+                    label="Generic collector"
+                    value={payment?.genericCollector || "—"}
+                  />
+                  <ReadField
+                    label="Location"
+                    value={payment?.location || "—"}
+                    className="flex flex-col gap-1.5 sm:col-span-2"
+                  />
                 </div>
                 <div className="mt-5 overflow-hidden rounded-xl bg-white/90 shadow-md ring-1 ring-blue-200">
                   <div className="border-b border-blue-100 bg-blue-50 px-4 py-3">
